@@ -1,0 +1,1898 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Packing List Pro v8</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+[data-theme="dark"]{--bg:#0f1117;--surface:#1a1d27;--surface2:#222636;--border:#2e3347;--border2:#3d4260;--text:#e8eaf0;--text2:#8a8fa8;--text3:#5a5f7a;--inp-bg:#222636;--total-bg:rgba(246,224,94,0.1);--total-border:rgba(246,224,94,0.4);--total-text:#f6e05e;--row-hover:rgba(79,142,247,0.05);--mixed-bg:rgba(155,114,245,0.07);}
+[data-theme="light"]{--bg:#f0f2f8;--surface:#fff;--surface2:#f4f6fb;--border:#d8dce8;--border2:#b8bfd0;--text:#1a1d2e;--text2:#5a607a;--text3:#9098b4;--inp-bg:#f4f6fb;--total-bg:rgba(200,160,0,0.1);--total-border:rgba(180,140,0,0.4);--total-text:#8a6000;--row-hover:rgba(79,142,247,0.04);--mixed-bg:rgba(155,114,245,0.06);}
+:root{--accent:#4f8ef7;--accent2:#38d9a9;--warn:#f5a623;--danger:#e05c5c;--purple:#9b72f5;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;padding:20px 16px 60px;transition:background .3s,color .3s;}
+
+/* WELCOME MODAL */
+#welcome-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px);}
+.welcome-box{background:var(--surface);border:2px solid var(--accent);border-radius:18px;padding:40px 48px;max-width:420px;width:90%;text-align:center;box-shadow:0 20px 80px rgba(79,142,247,0.3);}
+.welcome-logo{font-size:52px;margin-bottom:12px;}
+.welcome-title{font-size:22px;font-weight:700;color:var(--text);margin-bottom:6px;font-family:var(--mono);}
+.welcome-sub{font-size:12px;color:var(--text2);margin-bottom:28px;font-family:var(--mono);letter-spacing:1px;}
+.welcome-input{width:100%;background:var(--inp-bg);border:2px solid var(--border2);border-radius:8px;padding:12px 16px;color:var(--text);font-family:var(--mono);font-size:16px;font-weight:700;text-align:center;letter-spacing:3px;margin-bottom:16px;outline:none;transition:border-color .2s;}
+.welcome-input:focus{border-color:var(--accent);}
+.welcome-input.error{border-color:var(--danger);animation:shake .3s;}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.welcome-btn{width:100%;padding:13px;border:none;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--purple));color:white;font-family:var(--sans);font-size:15px;font-weight:700;cursor:pointer;transition:filter .2s;margin-bottom:10px;}
+.welcome-btn:hover{filter:brightness(1.1);}
+.welcome-error{color:var(--danger);font-size:12px;font-family:var(--mono);min-height:16px;margin-bottom:8px;}
+
+/* BOX MODAL */
+#box-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:8888;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+#box-modal-overlay.open{display:flex;}
+.box-modal{background:var(--surface);border:2px solid var(--purple);border-radius:14px;padding:28px 32px;max-width:420px;width:92%;box-shadow:0 12px 60px rgba(155,114,245,0.3);}
+.box-modal-title{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--purple);margin-bottom:20px;display:flex;align-items:center;gap:8px;}
+/* Modal grid 2 sections: poids + dims */
+.box-modal-section-label{font-size:9px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;margin-top:4px;padding-bottom:4px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;}
+.box-modal-section-label::before{content:'';display:inline-block;width:3px;height:10px;border-radius:2px;}
+.box-modal-section-label.weight-lbl::before{background:var(--warn);}
+.box-modal-section-label.dim-lbl::before{background:var(--purple);}
+.box-modal-weight-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.box-modal-dim-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:18px;}
+.box-modal-field{display:flex;flex-direction:column;gap:4px;}
+.box-modal-label{font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:1px;}
+.box-modal-input{background:var(--inp-bg);border:1px solid var(--border2);border-radius:6px;padding:8px 10px;color:var(--text);font-family:var(--mono);font-size:13px;font-weight:600;outline:none;transition:border-color .2s;width:100%;}
+.box-modal-input:focus{border-color:var(--purple);}
+.box-modal-input.weight-inp:focus{border-color:var(--warn);}
+.box-modal-actions{display:flex;gap:8px;}
+.btn-modal-save{flex:1;padding:10px;border:none;border-radius:7px;background:linear-gradient(135deg,var(--purple),var(--accent));color:white;font-weight:700;cursor:pointer;font-size:13px;}
+.btn-modal-cancel{padding:10px 18px;border:1px solid var(--border2);border-radius:7px;background:transparent;color:var(--text2);font-weight:700;cursor:pointer;font-size:13px;}
+
+/* POIDS MODELS MODAL */
+#weight-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:8889;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+#weight-modal-overlay.open{display:flex;}
+.weight-modal{background:var(--surface);border:2px solid var(--warn);border-radius:14px;padding:28px 32px;max-width:440px;width:92%;box-shadow:0 12px 60px rgba(245,166,35,0.25);}
+.weight-modal-title{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--warn);margin-bottom:18px;display:flex;align-items:center;gap:8px;}
+
+.app-header{max-width:1600px;margin:0 auto 22px;display:flex;align-items:center;justify-content:space-between;padding-bottom:16px;border-bottom:1px solid var(--border);}
+.logo-block{display:flex;align-items:center;gap:12px;}
+.logo-icon{width:42px;height:42px;background:linear-gradient(135deg,var(--accent),var(--purple));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;}
+.logo-text h1{font-size:18px;font-weight:700;letter-spacing:-.5px;}
+.logo-text p{font-size:11px;color:var(--text2);font-family:var(--mono);}
+.header-right{display:flex;align-items:center;gap:12px;}
+.header-badge{background:color-mix(in srgb,var(--accent) 15%,transparent);border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);color:var(--accent);font-family:var(--mono);font-size:11px;padding:4px 10px;border-radius:20px;letter-spacing:1px;}
+.theme-toggle{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:30px;padding:5px 14px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text2);transition:all .2s;user-select:none;}
+.theme-toggle:hover{border-color:var(--accent);color:var(--text);}
+.toggle-switch{width:34px;height:18px;background:var(--border2);border-radius:20px;position:relative;transition:background .3s;}
+.toggle-switch::after{content:'';position:absolute;left:3px;top:3px;width:12px;height:12px;border-radius:50%;background:white;transition:transform .3s;}
+[data-theme="light"] .toggle-switch{background:var(--accent);}
+[data-theme="light"] .toggle-switch::after{transform:translateX(16px);}
+.container{max-width:1600px;margin:0 auto;display:flex;flex-direction:column;gap:18px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;transition:background .3s,border-color .3s;}
+.card-title{font-size:10px;font-family:var(--mono);color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.card-title::before{content:'';display:inline-block;width:3px;height:14px;background:var(--accent);border-radius:2px;}
+
+/* ======= ORDER INFO GRID — REORGANIZED ======= */
+.order-section-label{font-size:9px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;margin-top:16px;padding:4px 0 6px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;}
+.order-section-label:first-of-type{margin-top:0;}
+.order-section-label::before{content:'';display:inline-block;width:3px;height:10px;border-radius:2px;flex-shrink:0;}
+.order-section-label.sec-ref::before{background:var(--accent);}
+.order-section-label.sec-ship::before{background:var(--accent2);}
+.order-section-label.sec-export::before{background:var(--warn);}
+.order-grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;}
+.order-grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;}
+.order-grid-auto{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;}
+.field-group{display:flex;flex-direction:column;gap:5px;position:relative;}
+.field-label{font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;}
+.field-input{background:var(--inp-bg);border:1px solid var(--border);border-radius:6px;padding:8px 11px;color:var(--text);font-family:var(--mono);font-size:13px;font-weight:600;transition:border-color .2s,background .3s;width:100%;}
+.field-input:focus{outline:none;border-color:var(--accent);}
+.field-input:disabled{color:var(--accent2);border-color:color-mix(in srgb,var(--accent2) 40%,transparent);background:color-mix(in srgb,var(--accent2) 8%,var(--inp-bg));}
+.field-new{border-color:color-mix(in srgb,var(--warn) 50%,transparent);background:color-mix(in srgb,var(--warn) 5%,var(--inp-bg));}
+.field-new:focus{border-color:var(--warn);}
+.field-label-new{color:var(--warn);}
+/* Special: port fields side by side */
+.port-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* AUTOCOMPLETE */
+.autocomplete-list{position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--accent);border-radius:0 0 8px 8px;z-index:500;max-height:200px;overflow-y:auto;display:none;box-shadow:0 8px 24px rgba(0,0,0,0.3);}
+.autocomplete-list.open{display:block;}
+.autocomplete-item{padding:8px 12px;font-family:var(--mono);font-size:12px;cursor:pointer;border-bottom:1px solid var(--border);}
+.autocomplete-item:hover{background:color-mix(in srgb,var(--accent) 15%,var(--surface));}
+.autocomplete-item:last-child{border-bottom:none;}
+
+.toggle-force-ctn{display:flex;align-items:center;gap:10px;margin-top:14px;padding:10px 16px;border-radius:8px;border:2px solid var(--border);background:var(--surface2);cursor:pointer;transition:all .25s;user-select:none;width:fit-content;}
+.toggle-force-ctn.on{border-color:var(--warn);background:color-mix(in srgb,var(--warn) 10%,var(--surface2));}
+.toggle-force-ctn .tfc-pill{width:42px;height:22px;border-radius:20px;background:var(--border2);position:relative;transition:background .25s;flex-shrink:0;}
+.toggle-force-ctn.on .tfc-pill{background:var(--warn);}
+.toggle-force-ctn .tfc-thumb{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .25s;box-shadow:0 1px 4px rgba(0,0,0,.3);}
+.toggle-force-ctn.on .tfc-thumb{transform:translateX(20px);}
+.toggle-force-ctn .tfc-label{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--text2);transition:color .25s;}
+.toggle-force-ctn.on .tfc-label{color:var(--warn);}
+.toggle-force-ctn .tfc-badge{font-size:10px;font-family:var(--mono);padding:2px 8px;border-radius:10px;background:var(--border);color:var(--text3);transition:all .25s;margin-left:2px;}
+.toggle-force-ctn.on .tfc-badge{background:color-mix(in srgb,var(--warn) 25%,var(--surface2));color:var(--warn);}
+
+.mode-card{flex:1;min-width:200px;background:var(--surface2);border:2px solid var(--border);border-radius:10px;padding:14px 18px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:12px;}
+.mode-card:hover{border-color:var(--border2);}
+.mode-card.active{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--surface2));}
+.mode-card input[type="radio"]{display:none;}
+.mode-icon{font-size:24px;flex-shrink:0;}
+.mode-info h3{font-size:12px;font-weight:700;margin-bottom:2px;}
+.mode-info p{font-size:11px;color:var(--text2);line-height:1.4;}
+.mode-dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--border2);margin-left:auto;flex-shrink:0;transition:all .2s;}
+.mode-card.active .mode-dot{background:var(--accent);border-color:var(--accent);}
+.mode-grid{display:flex;gap:12px;flex-wrap:wrap;}
+
+.max-sizes-row{margin-top:12px;display:none;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;background:color-mix(in srgb,var(--purple) 8%,var(--surface2));border:1px solid color-mix(in srgb,var(--purple) 30%,transparent);border-radius:8px;}
+.max-sizes-row.visible{display:flex;}
+.max-sizes-label{font-size:11px;font-family:var(--mono);color:var(--purple);font-weight:700;}
+.max-size-btn{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:2px solid var(--border2);background:var(--surface2);color:var(--text2);transition:all .2s;}
+.max-size-btn.active{border-color:var(--purple);color:var(--purple);background:color-mix(in srgb,var(--purple) 15%,var(--surface2));}
+
+.colors-header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+.color-tabs{display:flex;gap:6px;flex-wrap:wrap;flex:1;}
+.color-tab{padding:7px 16px;border-radius:6px;font-size:12px;font-weight:700;font-family:var(--mono);cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text2);transition:all .2s;display:flex;align-items:center;gap:6px;}
+.color-tab.active{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--surface2));}
+.tab-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.btn-tab-add{padding:7px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:color-mix(in srgb,var(--accent2) 15%,var(--surface2));color:var(--accent2);border:1px dashed color-mix(in srgb,var(--accent2) 50%,transparent);transition:all .2s;}
+.btn-tab-remove{padding:7px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:color-mix(in srgb,var(--danger) 12%,var(--surface2));color:var(--danger);border:1px dashed color-mix(in srgb,var(--danger) 40%,transparent);transition:all .2s;}
+.color-panel{display:none;}
+.color-panel.active{display:block;}
+.color-name-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.color-swatch{width:14px;height:14px;border-radius:3px;flex-shrink:0;}
+.color-name-input{background:var(--inp-bg);border:1px solid var(--border);border-radius:6px;padding:7px 12px;color:var(--text);font-family:var(--mono);font-size:13px;font-weight:700;width:160px;text-transform:uppercase;}
+.color-name-input:focus{outline:none;border-color:var(--accent);}
+
+.per-color-mode-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+.per-color-mode-label{font-size:11px;font-family:var(--mono);color:var(--text2);}
+.per-color-mode-btn{padding:5px 12px;border-radius:16px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);transition:all .2s;}
+.per-color-mode-btn.active-solid{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--surface2));}
+.per-color-mode-btn.active-mixed{border-color:var(--purple);color:var(--purple);background:color-mix(in srgb,var(--purple) 12%,var(--surface2));}
+
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+.input-table{border:2px solid var(--border2);}
+.input-table thead tr th{background:color-mix(in srgb,var(--accent) 18%,var(--surface2));color:var(--accent);font-family:var(--mono);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:8px 6px;text-align:center;border:1px solid var(--border2);font-weight:700;}
+.input-table thead tr th:first-child{text-align:left;padding-left:12px;}
+.input-table tbody tr{border-bottom:1px solid var(--border);}
+.input-table td{border:1px solid var(--border);padding:6px;text-align:center;vertical-align:middle;}
+.row-label{padding:8px 14px;font-size:11px;font-family:var(--mono);color:var(--text2);text-transform:uppercase;letter-spacing:1px;white-space:nowrap;background:color-mix(in srgb,var(--surface2) 60%,transparent);min-width:200px;border:1px solid var(--border2)!important;}
+.inp{background:var(--inp-bg);border:1px solid var(--border);border-radius:5px;padding:6px 4px;text-align:center;color:var(--text);font-family:var(--mono);font-size:12px;font-weight:600;transition:border-color .2s,background .3s;text-transform:uppercase;}
+.inp:focus{outline:none;border-color:var(--accent);}
+.inp-name{width:68px;}.inp-qty{width:76px;}.inp-cbm{width:44px;}
+
+.btn-box-detail{background:color-mix(in srgb,var(--purple) 18%,transparent);border:1px solid color-mix(in srgb,var(--purple) 40%,transparent);color:var(--purple);border-radius:5px;padding:4px 8px;font-size:13px;cursor:pointer;transition:all .2s;line-height:1;}
+.btn-box-detail:hover{background:color-mix(in srgb,var(--purple) 30%,transparent);}
+
+/* ======= DIM MODELS — REORGANIZED ======= */
+.dim-model-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+.dim-model-label{font-size:11px;font-family:var(--mono);color:var(--text2);}
+.dim-model-select{background:var(--inp-bg);border:1px solid var(--border);border-radius:6px;padding:5px 10px;color:var(--text);font-family:var(--mono);font-size:12px;cursor:pointer;}
+.dim-model-select:focus{outline:none;border-color:var(--purple);}
+
+/* Dim models manager improved */
+.dim-models-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-bottom:14px;}
+.dim-model-card{background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;position:relative;}
+.dim-model-card-name{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--accent);}
+.dim-model-card-dims{font-family:var(--mono);font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px;}
+.dim-model-card-dim-badge{background:color-mix(in srgb,var(--purple) 15%,var(--surface2));border:1px solid color-mix(in srgb,var(--purple) 30%,transparent);color:var(--purple);border-radius:4px;padding:2px 6px;font-size:10px;font-weight:700;}
+.dim-model-card-del{position:absolute;top:8px;right:8px;background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;line-height:1;padding:2px 5px;border-radius:4px;transition:all .2s;}
+.dim-model-card-del:hover{color:var(--danger);background:color-mix(in srgb,var(--danger) 15%,transparent);}
+.dim-add-form{display:grid;grid-template-columns:1fr 70px 70px 70px auto;gap:8px;align-items:center;padding:12px;background:color-mix(in srgb,var(--accent2) 6%,var(--surface2));border:1px dashed color-mix(in srgb,var(--accent2) 35%,transparent);border-radius:8px;}
+@media(max-width:700px){.dim-add-form{grid-template-columns:1fr 1fr;}}
+
+/* Poids models manager improved */
+.weight-models-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-bottom:14px;}
+.weight-model-card{background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;position:relative;}
+.weight-model-card-name{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--warn);}
+.weight-model-card-vals{font-family:var(--mono);font-size:11px;color:var(--text2);display:flex;flex-wrap:wrap;align-items:center;gap:6px;}
+.weight-model-card-badge{background:color-mix(in srgb,var(--warn) 15%,var(--surface2));border:1px solid color-mix(in srgb,var(--warn) 30%,transparent);color:var(--warn);border-radius:4px;padding:2px 6px;font-size:10px;font-weight:700;}
+.weight-model-card-del{position:absolute;top:8px;right:8px;background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;line-height:1;padding:2px 5px;border-radius:4px;transition:all .2s;}
+.weight-model-card-del:hover{color:var(--danger);background:color-mix(in srgb,var(--danger) 15%,transparent);}
+.weight-add-form{display:grid;grid-template-columns:1fr 90px 100px auto;gap:8px;align-items:center;padding:12px;background:color-mix(in srgb,var(--warn) 6%,var(--surface2));border:1px dashed color-mix(in srgb,var(--warn) 35%,transparent);border-radius:8px;}
+@media(max-width:700px){.weight-add-form{grid-template-columns:1fr 1fr;}}
+
+/* Models apply row in panel */
+.models-apply-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;}
+.models-apply-item{display:flex;align-items:center;gap:6px;}
+.models-apply-label{font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:1px;}
+
+.btn{padding:10px 18px;border:none;border-radius:7px;font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:7px;letter-spacing:.3px;}
+.btn:active{transform:scale(.97);}
+.btn-add{background:color-mix(in srgb,var(--accent) 20%,var(--surface2));color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);}
+.btn-remove{background:color-mix(in srgb,var(--danger) 15%,var(--surface2));color:var(--danger);border:1px solid color-mix(in srgb,var(--danger) 35%,transparent);}
+.btn-generate{background:linear-gradient(135deg,var(--accent),var(--purple));color:white;font-size:14px;padding:13px 28px;flex:2;justify-content:center;box-shadow:0 4px 20px color-mix(in srgb,var(--accent) 30%,transparent);}
+.btn-generate:hover{filter:brightness(1.1);}
+.btn-excel{background:color-mix(in srgb,var(--accent2) 18%,var(--surface2));color:var(--accent2);border:1px solid color-mix(in srgb,var(--accent2) 40%,transparent);flex:1;justify-content:center;}
+.btn-pdf{background:color-mix(in srgb,var(--warn) 18%,var(--surface2));color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 40%,transparent);flex:1;justify-content:center;}
+.btn-reset{padding:10px 18px;border-radius:7px;font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:7px;background:color-mix(in srgb,var(--danger) 18%,var(--surface2));color:var(--danger);border:1px solid color-mix(in srgb,var(--danger) 40%,transparent);transition:all .15s;}
+.btn-reset:hover{background:color-mix(in srgb,var(--danger) 28%,var(--surface2));}
+.actions-row{display:flex;gap:10px;flex-wrap:wrap;}
+
+/* RESULT SECTION */
+.result-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;border:2px solid var(--border2);}
+.result-table th{background:var(--surface2);color:var(--text2);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:10px 9px;text-align:center;border:1px solid var(--border2);white-space:nowrap;font-weight:700;}
+.result-table th:first-child{text-align:left;padding-left:14px;}
+.result-table td{padding:8px 9px;text-align:center;border:1px solid var(--border);color:var(--text);font-weight:500;}
+.result-table td:first-child{text-align:left;padding-left:14px;font-weight:700;}
+.solid-row:hover td{background:var(--row-hover);}
+.mixed-row td{background:var(--mixed-bg);}
+.mixed-row:hover td{background:color-mix(in srgb,var(--purple) 10%,transparent);}
+.total-row td{background:var(--total-bg)!important;color:var(--total-text)!important;font-weight:700;border-top:2px solid var(--total-border)!important;border-bottom:2px solid var(--total-border)!important;border:1px solid var(--total-border)!important;}
+.editable-cell{width:54px;padding:5px 4px;text-align:center;border:1px dashed color-mix(in srgb,var(--purple) 60%,transparent);border-radius:4px;background:color-mix(in srgb,var(--purple) 10%,transparent);color:var(--text);font-family:var(--mono);font-size:12px;font-weight:600;}
+.editable-cell:focus{outline:none;border:1px solid var(--purple);}
+.result-color-title{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px 16px;border-radius:8px;background:color-mix(in srgb,var(--accent) 8%,var(--surface2));border:1px solid color-mix(in srgb,var(--accent) 25%,transparent);font-family:var(--mono);font-size:13px;font-weight:700;color:var(--accent);}
+.dot-color{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
+.stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px;}
+.stat-chip{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:3px;}
+.stat-label{font-size:9px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:1px;}
+.stat-value{font-size:17px;font-weight:700;font-family:var(--mono);}
+.c-accent{color:var(--accent);}.c-green{color:var(--accent2);}.c-warn{color:var(--warn);}.c-purple{color:var(--purple);}
+.info-alert{padding:10px 14px;border-radius:8px;font-size:12px;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.info-alert.solid{background:color-mix(in srgb,var(--accent) 10%,var(--surface2));border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);color:var(--accent);}
+.info-alert.mixed{background:color-mix(in srgb,var(--purple) 10%,var(--surface2));border:1px solid color-mix(in srgb,var(--purple) 30%,transparent);color:var(--purple);}
+.order-meta{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;font-family:var(--mono);font-size:11px;color:var(--text2);}
+.order-meta span b{color:var(--text);}
+.combined-pl-wrapper{margin-top:8px;border:2px solid var(--accent)!important;}
+.combined-pl-title{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:12px 18px;border-radius:8px;background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 15%,var(--surface2)),color-mix(in srgb,var(--purple) 15%,var(--surface2)));border:2px solid color-mix(in srgb,var(--accent) 40%,transparent);font-family:var(--mono);font-size:14px;font-weight:700;color:var(--text);}
+.color-legend{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;}
+.legend-item{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;font-weight:700;}
+.legend-dot{width:12px;height:12px;border-radius:50%;}
+.color-stripe-cell{font-weight:700;font-family:var(--mono);font-size:10px;white-space:nowrap;}
+
+/* BREAKDOWN SECTION */
+.breakdown-section{margin-top:16px;}
+.breakdown-title{background:#f6e05e;color:#1a1a1a;font-family:var(--mono);font-size:13px;font-weight:700;padding:10px 16px;border-radius:8px 8px 0 0;letter-spacing:1px;border:2px solid #d4b800;}
+.breakdown-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;border:2px solid #d4b800;border-top:none;}
+.breakdown-table th{background:#fffde7;color:#7B6000;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:8px 10px;text-align:center;border:1px solid #d4b800;font-weight:700;}
+.breakdown-table td{padding:7px 10px;text-align:center;border:1px solid #ddd;font-weight:500;}
+.breakdown-table .bk-color-cell{font-weight:700;text-align:left;padding-left:14px;}
+.breakdown-table .bk-ttl-row td{background:#fffde7;font-weight:700;border-top:2px solid #d4b800;}
+.breakdown-summary{padding:16px;border:2px solid #d4b800;border-top:none;background:var(--surface2);border-radius:0 0 8px 8px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;}
+.breakdown-kv{display:flex;gap:10px;align-items:baseline;font-family:var(--mono);font-size:12px;}
+.breakdown-kv .bk-key{color:var(--text2);font-weight:600;min-width:140px;}
+.breakdown-kv .bk-val{color:var(--text);font-weight:700;font-size:14px;}
+
+/* DIMENSION TABLE */
+.dim-section{margin-top:16px;}
+.dim-title{background:#f6e05e;color:#1a1a1a;font-family:var(--mono);font-size:13px;font-weight:700;padding:10px 16px;border-radius:8px 8px 0 0;letter-spacing:1px;border:2px solid #d4b800;}
+.dim-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;border:2px solid #d4b800;border-top:none;}
+.dim-table th{background:#fffde7;color:#7B6000;font-size:10px;text-transform:uppercase;padding:8px 10px;text-align:center;border:1px solid #d4b800;font-weight:700;letter-spacing:1px;}
+.dim-table td{padding:7px 10px;text-align:center;border:1px solid #ddd;}
+
+/* PDF PRINT LAYOUT */
+@media print{
+  body{background:white!important;color:black!important;padding:0!important;font-family:Arial,sans-serif;}
+  #welcome-overlay,#box-modal-overlay,#weight-modal-overlay,#sql-import-overlay{display:none!important;}
+  .app-header,.mode-grid,.actions-row,.btn,.theme-toggle,.color-tabs,.btn-tab-add,.btn-tab-remove,.btn-reset,.per-color-mode-row,.dim-model-row,.models-apply-row,.max-sizes-row,.card:not(.result-card),.info-alert{display:none!important;}
+  .card{border:none!important;background:white!important;padding:0!important;margin:0!important;}
+  #result-section{display:block!important;}
+  .pdf-doc-header{display:block!important;}
+  .pdf-doc-header h1{text-align:center;color:#e05c5c;font-size:18pt;font-family:Arial,sans-serif;margin-bottom:8px;border-bottom:2px solid #e05c5c;padding-bottom:6px;}
+  .pdf-doc-header .pdf-info-block{background:#fdecea;border:1px solid #e8a0a0;padding:10px 14px;margin-bottom:12px;font-size:9pt;color:#c0392b;line-height:1.6;}
+  .result-table{border:1.5px solid #999!important;font-size:8pt;}
+  .result-table th{background:#f0f0f0!important;color:#333!important;border:1px solid #999!important;font-size:7pt;}
+  .result-table td{border:1px solid #ccc!important;font-size:8pt;}
+  .total-row td{background:#fffde7!important;color:#333!important;border:1px solid #aaa!important;font-weight:700!important;}
+  .mixed-row td,.solid-row td{background:white!important;}
+  .inp,.field-input,.editable-cell{border:none!important;background:transparent!important;color:black!important;}
+  .input-table{border:1.5px solid #999!important;}
+  .input-table td{border:1px solid #ccc!important;}
+  .stats-bar{display:none!important;}
+  .result-color-title{background:#f0f0f0!important;color:#333!important;border:1px solid #ccc!important;font-size:9pt;}
+  .order-meta{font-size:8pt;color:#555!important;}
+  .order-meta span b{color:#000!important;}
+  .th-net{color:#00ACC1!important;font-weight:900!important;}
+  .th-gross{color:#e05c5c!important;font-weight:900!important;}
+  .td-net{color:#00695C!important;font-weight:700!important;}
+  .td-gross{color:#C62828!important;font-weight:700!important;}
+  .breakdown-title,.dim-title{background:#f6e05e!important;color:#1a1a1a!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:9pt;}
+  .breakdown-table{font-size:8pt;}
+  .breakdown-table th{background:#fffde7!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .breakdown-table .bk-ttl-row td{background:#fffde7!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .breakdown-summary{border:1px solid #d4b800;font-size:8pt;}
+  .breakdown-kv .bk-val{font-size:10pt;}
+  .dim-table th{background:#fffde7!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  /* MASQUER la section dim en impression */
+  .dim-section{display:none!important;}
+  .color-legend{background:#f5f5f5!important;font-size:8pt;}
+  .result-table td:nth-child(2){font-weight:700;}
+  page-break-inside:avoid;
+}
+</style>
+</head>
+<body>
+
+<!-- WELCOME MODAL -->
+<div id="welcome-overlay">
+  <div class="welcome-box">
+    <div class="welcome-logo">📦</div>
+    <div class="welcome-title">PACKING LIST PRO</div>
+    <div class="welcome-sub">LOGISTICS OFFICER SYSTEM — v8.0</div>
+    <div class="welcome-error" id="welcome-error"></div>
+    <input type="password" class="welcome-input" id="welcome-input" placeholder="MOT DE PASSE" autocomplete="off" onkeydown="if(event.key==='Enter')checkWelcome()">
+    <button class="welcome-btn" onclick="checkWelcome()">🔐 ENTRER</button>
+  </div>
+</div>
+
+<!-- BOX DETAIL MODAL — 2 sections claires -->
+<div id="box-modal-overlay">
+  <div class="box-modal">
+    <div class="box-modal-title">✏️ DÉTAIL CARTON — <span id="bm-size-label"></span></div>
+
+    <div class="box-modal-section-label weight-lbl">⚖️ Poids</div>
+    <div class="box-modal-weight-grid">
+      <div class="box-modal-field">
+        <span class="box-modal-label">Poids Pièce (KG)</span>
+        <input class="box-modal-input weight-inp" id="bm-wpiece" type="number" step="0.001" min="0" placeholder="0.250">
+      </div>
+      <div class="box-modal-field">
+        <span class="box-modal-label">Poids Carton Vide (KG)</span>
+        <input class="box-modal-input weight-inp" id="bm-wcarton" type="number" step="0.01" min="0" placeholder="0.80">
+      </div>
+    </div>
+
+    <div class="box-modal-section-label dim-lbl">📐 Dimensions Carton</div>
+    <div class="box-modal-dim-grid">
+      <div class="box-modal-field">
+        <span class="box-modal-label">Longueur (cm)</span>
+        <input class="box-modal-input" id="bm-dimL" type="number" step="0.1" min="0" placeholder="60">
+      </div>
+      <div class="box-modal-field">
+        <span class="box-modal-label">Largeur (cm)</span>
+        <input class="box-modal-input" id="bm-diml" type="number" step="0.1" min="0" placeholder="40">
+      </div>
+      <div class="box-modal-field">
+        <span class="box-modal-label">Hauteur (cm)</span>
+        <input class="box-modal-input" id="bm-dimh" type="number" step="0.1" min="0" placeholder="30">
+      </div>
+    </div>
+
+    <div class="box-modal-actions">
+      <button class="btn-modal-cancel" onclick="closeBoxModal()">✕ Annuler</button>
+      <button class="btn-modal-save" onclick="saveBoxModal()">💾 SAUVEGARDER</button>
+    </div>
+  </div>
+</div>
+
+<!-- SQL IMPORT MODAL -->
+<div id="sql-import-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:8880;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+  <div style="background:var(--surface);border:2px solid var(--accent2);border-radius:14px;padding:28px 32px;max-width:440px;width:94%;box-shadow:0 12px 60px rgba(56,217,169,0.3);">
+    <div style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--accent2);margin-bottom:18px;display:flex;align-items:center;gap:8px;">🗄️ CHARGER BASE DE DONNÉES SQL</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:16px;font-family:var(--mono);">Sélectionnez votre fichier <b>.sql</b> précédemment exporté.</div>
+    <input type="file" id="sql-file-input" accept=".sql,.txt" style="display:none;" onchange="importSQLFile(this)">
+    <div id="sql-drop-zone" onclick="document.getElementById('sql-file-input').click()" style="border:2px dashed var(--accent2);border-radius:10px;padding:28px;text-align:center;cursor:pointer;margin-bottom:16px;transition:background .2s;"
+      ondragover="event.preventDefault();this.style.background='color-mix(in srgb,var(--accent2) 15%,var(--surface))'"
+      ondragleave="this.style.background=''"
+      ondrop="event.preventDefault();this.style.background='';handleSQLDrop(event)">
+      <div style="font-size:32px;margin-bottom:8px;">📂</div>
+      <div style="font-family:var(--mono);font-size:12px;color:var(--text2);">Cliquez ou glissez votre fichier <b style="color:var(--accent2);">.sql</b> ici</div>
+    </div>
+    <div id="sql-import-status" style="font-family:var(--mono);font-size:12px;color:var(--accent2);min-height:18px;margin-bottom:12px;"></div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="document.getElementById('sql-import-overlay').style.display='none'" style="flex:1;padding:10px;border:1px solid var(--border2);border-radius:7px;background:transparent;color:var(--text2);font-weight:700;cursor:pointer;font-size:13px;">✕ Fermer</button>
+    </div>
+  </div>
+</div>
+
+<header class="app-header">
+  <div class="logo-block">
+    <div class="logo-icon">📦</div>
+    <div class="logo-text"><h1>Packing List Pro</h1><p>LOGISTICS OFFICER SYSTEM</p></div>
+  </div>
+  <div class="header-right">
+    <span class="header-badge">v8.0 — 2025</span>
+    <div class="theme-toggle" onclick="toggleTheme()">
+      <span id="theme-label">🌙 Dark</span>
+      <div class="toggle-switch" id="toggle-switch"></div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- ===== INFORMATIONS COMMANDE — REORGANIZED ===== -->
+  <div class="card">
+    <div class="card-title">Informations Commande</div>
+
+    <!-- Section 1: Références -->
+    <div class="order-section-label sec-ref">📋 Références de la Commande</div>
+    <div class="order-grid-2">
+      <div class="field-group">
+        <span class="field-label">Order / Commande</span>
+        <input class="field-input" type="text" id="info-order" value="" placeholder="ex: 2630001AA" oninput="updateFilename()">
+      </div>
+      <div class="field-group" id="customer-field-group">
+        <span class="field-label">Customer / Client (Mers)</span>
+        <input class="field-input" type="text" id="info-customer" value="" placeholder="ex: Johnnie-O" oninput="onCustomerInput()" autocomplete="off">
+        <div class="autocomplete-list" id="customer-autocomplete"></div>
+      </div>
+      <div class="field-group">
+        <span class="field-label">PO# Client</span>
+        <input class="field-input" type="text" id="info-po" value="" placeholder="ex: 08788-00" oninput="updateFilename()">
+      </div>
+      <div class="field-group">
+        <span class="field-label">Style N°</span>
+        <input class="field-input" type="text" id="info-style" value="" placeholder="ex: JWSW100150 - AMANDA" oninput="updateFilename()">
+      </div>
+      <div class="field-group">
+        <span class="field-label field-label-new">Invoice N° ★</span>
+        <input class="field-input field-new" type="text" id="info-invoice" value="" placeholder="ex: INV-2025-001">
+      </div>
+    </div>
+
+    <!-- Section 2: Expédition -->
+    <div class="order-section-label sec-ship">🚢 Expédition & Destination</div>
+    <div class="order-grid-3">
+      <div class="field-group">
+        <span class="field-label field-label-new">Destination ★</span>
+        <input class="field-input field-new" type="text" id="info-destination" value="" placeholder="ex: Raleigh NC USA">
+      </div>
+      <div class="field-group">
+        <span class="field-label field-label-new">Adresse Livraison ★</span>
+        <input class="field-input field-new" type="text" id="info-address" value="" placeholder="ex: 2710 Wycliff Rd. Suite #130">
+      </div>
+      <div class="field-group">
+        <span class="field-label field-label-new">Pays de Destination ★</span>
+        <input class="field-input field-new" type="text" id="info-pays" value="" placeholder="ex: UNITED STATES">
+      </div>
+    </div>
+    <!-- Ports côte à côte -->
+    <div class="port-pair" style="margin-top:10px;">
+      <div class="field-group">
+        <span class="field-label field-label-new">Port de Départ ★</span>
+        <input class="field-input field-new" type="text" id="info-port-depart" value="" placeholder="ex: Antananarivo">
+      </div>
+      <div class="field-group">
+        <span class="field-label field-label-new">Port d'Arrivée ★</span>
+        <input class="field-input field-new" type="text" id="info-port-arrivee" value="" placeholder="ex: New York">
+      </div>
+    </div>
+
+    <!-- Section 3: Résumé export -->
+    <div class="order-section-label sec-export">📊 Résumé & Export</div>
+    <div class="order-grid-3">
+      <div class="field-group">
+        <span class="field-label">Couleur(s)</span>
+        <input class="field-input" type="text" id="info-color-display" value="" placeholder="auto depuis couleurs" disabled>
+      </div>
+      <div class="field-group">
+        <span class="field-label">Quantité Totale (PCS)</span>
+        <input class="field-input" type="text" id="info-total-qty" value="" disabled>
+      </div>
+      <div class="field-group">
+        <span class="field-label">Nom fichier Export</span>
+        <input class="field-input" type="text" id="info-filename" placeholder="auto-genere">
+      </div>
+    </div>
+
+    <div style="margin-top:12px;padding:6px 12px;background:color-mix(in srgb,var(--warn) 10%,var(--surface2));border:1px solid color-mix(in srgb,var(--warn) 30%,transparent);border-radius:6px;font-family:var(--mono);font-size:10px;color:var(--warn);">
+      ★ = Champs Destination, Invoice, Ports, Adresse, Pays
+    </div>
+  </div>
+
+  <!-- PACKING STRATEGY -->
+  <div class="card">
+    <div class="card-title">Stratégie d'Emballage (défaut global)</div>
+    <div class="mode-grid">
+      <label class="mode-card active" id="card-solid" onclick="selectMode('strict_solide')">
+        <input type="radio" name="modeEmballage" value="strict_solide" checked>
+        <div class="mode-icon">📦</div>
+        <div class="mode-info"><h3>SOLID PACK STRICT</h3><p>Chaque carton = une seule taille.</p></div>
+        <div class="mode-dot"></div>
+      </label>
+      <label class="mode-card" id="card-mixed" onclick="selectMode('mixte_autorise')">
+        <input type="radio" name="modeEmballage" value="mixte_autorise">
+        <div class="mode-icon">🔀</div>
+        <div class="mode-info"><h3>MIXED PACK AUTORISÉ</h3><p>Restes regroupés en cartons mixtes.</p></div>
+        <div class="mode-dot"></div>
+      </label>
+    </div>
+    <div class="max-sizes-row" id="max-sizes-row">
+      <span class="max-sizes-label">Max tailles / carton :</span>
+      <button class="max-size-btn" data-val="2" onclick="setMaxSizes(2,this)">2 tailles</button>
+      <button class="max-size-btn active" data-val="3" onclick="setMaxSizes(3,this)">3 tailles</button>
+      <button class="max-size-btn" data-val="99" onclick="setMaxSizes(99,this)">Toutes</button>
+    </div>
+    <div class="toggle-force-ctn" id="toggle-force-ctn" onclick="toggleForceSingleCtn()">
+      <div class="tfc-pill"><div class="tfc-thumb"></div></div>
+      <span class="tfc-label">📦 Forcer 1 carton unique</span>
+      <span class="tfc-badge" id="tfc-badge">DÉSACTIVÉ</span>
+    </div>
+  </div>
+
+  <!-- DATA ENTRY BY COLOR -->
+  <div class="card">
+    <div class="card-title">Saisie des Données — par Couleur</div>
+    <div class="colors-header">
+      <div class="color-tabs" id="color-tabs"></div>
+      <button class="btn-tab-add" onclick="ajouterCouleur()">＋ Couleur</button>
+      <button class="btn-tab-remove" onclick="supprimerCouleur()">－ Couleur</button>
+    </div>
+    <div id="color-panels"></div>
+  </div>
+
+  <!-- ===== MODELS CARD: DIMENSIONS + POIDS ===== -->
+  <div class="card">
+    <div class="card-title">Modèles de Dimensions & Poids Carton</div>
+
+    <!-- DIMENSIONS SECTION -->
+    <div class="order-section-label" style="margin-top:0;" id="dim-section-lbl">
+      <span style="display:inline-block;width:3px;height:10px;border-radius:2px;background:var(--purple);margin-right:4px;"></span>
+      📐 Modèles de Dimensions Carton
+    </div>
+    <div class="dim-models-grid" id="dim-models-list"></div>
+    <div class="dim-add-form">
+      <div class="field-group" style="gap:3px;">
+        <span class="field-label">Nom client / modèle</span>
+        <input type="text" id="new-model-customer" class="field-input" placeholder="ex: WOOLWORTHS">
+      </div>
+      <div class="field-group" style="gap:3px;">
+        <span class="field-label">L (cm)</span>
+        <input type="number" id="new-model-L" class="field-input" placeholder="60">
+      </div>
+      <div class="field-group" style="gap:3px;">
+        <span class="field-label">l (cm)</span>
+        <input type="number" id="new-model-l" class="field-input" placeholder="40">
+      </div>
+      <div class="field-group" style="gap:3px;">
+        <span class="field-label">h (cm)</span>
+        <input type="number" id="new-model-h" class="field-input" placeholder="30">
+      </div>
+      <button class="btn btn-add" onclick="addDimModel()" style="align-self:flex-end;">+ Dim</button>
+    </div>
+
+    <!-- POIDS SECTION -->
+    <div class="order-section-label" style="margin-top:18px;">
+      <span style="display:inline-block;width:3px;height:10px;border-radius:2px;background:var(--warn);margin-right:4px;"></span>
+      ⚖️ Modèles de Poids (Pièce & Carton Vide)
+    </div>
+    <div class="weight-models-grid" id="weight-models-list"></div>
+    <div class="weight-add-form">
+      <div class="field-group" style="gap:3px;">
+        <span class="field-label">Nom modèle / article</span>
+        <input type="text" id="new-wmodel-name" class="field-input" placeholder="ex: POLO SHIRT M">
+      </div>
+      <div class="field-group" style="gap:3px;">
+        <span class="field-label">Poids Pièce (KG)</span>
+        <input type="number" id="new-wmodel-piece" class="field-input" step="0.001" placeholder="0.250">
+      </div>
+      <div class="field-group" style="gap:3px;">
+        <span class="field-label">Poids Carton Vide (KG)</span>
+        <input type="number" id="new-wmodel-carton" class="field-input" step="0.01" placeholder="0.80">
+      </div>
+      <button class="btn btn-add" onclick="addWeightModel()" style="background:color-mix(in srgb,var(--warn) 20%,var(--surface2));color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 40%,transparent);align-self:flex-end;">+ Poids</button>
+    </div>
+  </div>
+
+  <div class="actions-row">
+    <button class="btn btn-generate" onclick="generer()">🔧 GÉNÉRER LA PACKING LIST</button>
+    <button class="btn btn-excel" id="btnExcel" style="display:none;" onclick="exporterExcel()">📊 EXPORTER EXCEL</button>
+    <button class="btn btn-pdf" id="btnPDF" style="display:none;" onclick="window.print()">📄 IMPRIMER / PDF</button>
+    <button class="btn" style="background:color-mix(in srgb,var(--accent2) 18%,var(--surface2));color:var(--accent2);border:1px solid color-mix(in srgb,var(--accent2) 40%,transparent);flex:1;justify-content:center;" onclick="exporterSQL()">🗄️ GÉNÉRER SQL</button>
+    <button class="btn" style="background:color-mix(in srgb,var(--warn) 18%,var(--surface2));color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 40%,transparent);flex:1;justify-content:center;" onclick="document.getElementById('sql-import-overlay').style.display='flex'">📥 CHARGER SQL</button>
+    <button class="btn-reset" onclick="reinitialiser()">🔄 RÉINITIALISER TOUT</button>
+  </div>
+  <div id="result-section" style="display:none;"></div>
+</div>
+
+<script>
+// ========= CONSTANTS =========
+const PALETTE=['#4f8ef7','#38d9a9','#f5a623','#9b72f5','#e05c5c','#06b6d4','#ec4899','#f6e05e'];
+const COLOR_BG_DARK=['rgba(79,142,247,0.13)','rgba(56,217,169,0.13)','rgba(245,166,35,0.13)','rgba(155,114,245,0.13)','rgba(224,92,92,0.13)','rgba(6,182,212,0.13)','rgba(236,72,153,0.13)','rgba(246,224,94,0.13)'];
+const COLOR_BG_LIGHT=['rgba(79,142,247,0.10)','rgba(56,217,169,0.10)','rgba(245,166,35,0.10)','rgba(155,114,245,0.10)','rgba(224,92,92,0.10)','rgba(6,182,212,0.10)','rgba(236,72,153,0.10)','rgba(246,224,94,0.10)'];
+
+const CUSTOMERS=["6TH SENS","AGOA CTN","ANTHROPOLOGIE","ARMANI","AUSTIN REED","AWAY","BARBOUR","BONOBO","BRENTWOOD GENTS","BREUNINGER","BROOKS","CAPE UNION","CHARLES TYRWITT","CONBIPEL","COUNTRY ROAD&TRENERY GENTS","DANIEL HECHTER","DILLARDS","DOUBLE TWO","EDGARS","EL CORTE GENTS","EWM","EXACT","FABIANI","Faherty Brand Ladies","FASHION PROJECT","FCN LADIES","FREE PEOPLE LADIES","GENTLEMAN FARMER","GIESSWEIN","GIOVANNI","HACKETT","Harmont&Blaine Gents","HARRIS WILLSON","HOUSE OF BRUAR","HUG","HUGO BOSS","INSPECTION LYON&DEC","IZAC","JACQUES VERT","JHONNIE O","JOHN CRAIG","JOHN LEWIS","JOS A BANK","JOSEPH ABBOUD","JULES","KWAY GENTS","LACOSTE","LEFT OVER 2019","LION OF PORCHES & DECENIO","M&S","MAKRO","MARKETING TRIPS LADIES","MARKHAM -FABIANI-UNION DENIM","MASK","MASSIMO","MONOPRIX","MOORES","MOSS BROS","MR BLUE","New folder","NEXT","ORVIS","PETER MILLAR","PICK n PAY","POLO JEANS","PRINGLE","QUEENSPARK","REDBAT","RELAY GENTS","RIVERWALK","RODD&GUNN","ROOTS","RUSSEL","SACOOR","SANDRO","SAS DEVRED","SCALPERS","SCOTCH & SODA","SKIPERBAR","SPITZ","STOCK ORDER","STOKOMANI","SUIT SUPPLY","SUPERBALIST","THOMAS DEAN","TOMMY","UNIQ mens","UZZI","VERWEIJ","WOOLOVERS","WOOLWORTHS","ZADIG&VOLTAIRE","ZLABELS"];
+
+let couleurs=[];
+let activeCIdx=0;
+let _allResults=[];
+let _maxSizes=3;
+let _forceSingleCtn=false;
+let _dimModels=[
+  {name:"WOOLWORTHS",L:60,l:40,h:30},
+  {name:"HUGO BOSS",L:65,l:45,h:35},
+  {name:"STANDARD",L:61,l:41,h:30}
+];
+let _weightModels=[
+  {name:"POLO SHIRT",wPiece:0.250,wCarton:0.80},
+  {name:"JACKET",wPiece:0.650,wCarton:1.20},
+  {name:"T-SHIRT",wPiece:0.180,wCarton:0.70}
+];
+let _boxModalCtx=null;
+
+// ========= WELCOME =========
+function checkWelcome(){
+  const v=document.getElementById('welcome-input').value;
+  const err=document.getElementById('welcome-error');
+  if(v==='Naty'){
+    document.getElementById('welcome-overlay').style.display='none';
+  }else{
+    err.textContent='❌ Identification incorrecte. Accès refusé.';
+    const inp=document.getElementById('welcome-input');
+    inp.classList.add('error');inp.value='';
+    setTimeout(()=>inp.classList.remove('error'),400);
+  }
+}
+
+function toggleTheme(){
+  const h=document.documentElement;
+  const dark=h.getAttribute('data-theme')==='dark';
+  h.setAttribute('data-theme',dark?'light':'dark');
+  document.getElementById('theme-label').textContent=dark?'☀️ Light':'🌙 Dark';
+}
+
+// ========= AUTOCOMPLETE =========
+function onCustomerInput(){
+  updateFilename();updateColorDisplay();
+  const val=document.getElementById('info-customer').value.trim().toUpperCase();
+  const list=document.getElementById('customer-autocomplete');
+  if(val.length===0){list.classList.remove('open');list.innerHTML='';return;}
+  const matches=CUSTOMERS.filter(c=>c.toUpperCase().includes(val)).slice(0,8);
+  if(matches.length===0){list.classList.remove('open');list.innerHTML='';return;}
+  list.innerHTML=matches.map(m=>'<div class="autocomplete-item" onclick="selectCustomer(\''+m.replace(/'/g,"\\'")+'\')">' +m+'</div>').join('');
+  list.classList.add('open');
+}
+function selectCustomer(name){
+  document.getElementById('info-customer').value=name;
+  document.getElementById('customer-autocomplete').classList.remove('open');
+  document.getElementById('customer-autocomplete').innerHTML='';
+  updateFilename();applyDimModelByCustomer(name);
+}
+document.addEventListener('click',function(e){
+  if(!e.target.closest('#customer-field-group'))document.getElementById('customer-autocomplete').classList.remove('open');
+});
+
+// ========= DIM MODELS =========
+function renderDimModels(){
+  const c=document.getElementById('dim-models-list');
+  c.innerHTML=_dimModels.map((m,i)=>`
+    <div class="dim-model-card">
+      <div class="dim-model-card-name">${m.name}</div>
+      <div class="dim-model-card-dims">
+        <span class="dim-model-card-dim-badge">L ${m.L}</span>
+        <span class="dim-model-card-dim-badge">l ${m.l}</span>
+        <span class="dim-model-card-dim-badge">h ${m.h}</span>
+        <span style="color:var(--text3);font-size:10px;">cm</span>
+      </div>
+      <button class="dim-model-card-del" onclick="deleteDimModel(${i})">✕</button>
+    </div>`).join('');
+  if(document.getElementById('panel-0'))refreshAllPanelDimSelects();
+}
+
+function renderWeightModels(){
+  const c=document.getElementById('weight-models-list');
+  c.innerHTML=_weightModels.map((m,i)=>`
+    <div class="weight-model-card">
+      <div class="weight-model-card-name">${m.name}</div>
+      <div class="weight-model-card-vals">
+        <span class="weight-model-card-badge">Pièce: ${m.wPiece} kg</span>
+        <span class="weight-model-card-badge">Carton: ${m.wCarton} kg</span>
+      </div>
+      <button class="weight-model-card-del" onclick="deleteWeightModel(${i})">✕</button>
+    </div>`).join('');
+  if(document.getElementById('panel-0'))refreshAllPanelWeightSelects();
+}
+
+function addDimModel(){
+  const name=document.getElementById('new-model-customer').value.trim();
+  const L=parseFloat(document.getElementById('new-model-L').value)||0;
+  const l=parseFloat(document.getElementById('new-model-l').value)||0;
+  const h=parseFloat(document.getElementById('new-model-h').value)||0;
+  if(!name||!L||!l||!h){alert('Remplissez tous les champs du modèle dimension.');return;}
+  const existIdx=_dimModels.findIndex(d=>d.name.toLowerCase()===name.toLowerCase());
+  if(existIdx>=0)_dimModels.splice(existIdx,1);
+  _dimModels.push({name,L,l,h});renderDimModels();refreshAllPanelDimSelects();
+  document.getElementById('new-model-customer').value='';
+  document.getElementById('new-model-L').value='';
+  document.getElementById('new-model-l').value='';
+  document.getElementById('new-model-h').value='';
+}
+
+function addWeightModel(){
+  const name=document.getElementById('new-wmodel-name').value.trim();
+  const wPiece=parseFloat(document.getElementById('new-wmodel-piece').value)||0;
+  const wCarton=parseFloat(document.getElementById('new-wmodel-carton').value)||0;
+  if(!name||!wPiece||!wCarton){alert('Remplissez tous les champs du modèle poids.');return;}
+  const existIdx=_weightModels.findIndex(d=>d.name.toLowerCase()===name.toLowerCase());
+  if(existIdx>=0)_weightModels.splice(existIdx,1);
+  _weightModels.push({name,wPiece,wCarton});renderWeightModels();refreshAllPanelWeightSelects();
+  document.getElementById('new-wmodel-name').value='';
+  document.getElementById('new-wmodel-piece').value='';
+  document.getElementById('new-wmodel-carton').value='';
+}
+
+function deleteDimModel(i){_dimModels.splice(i,1);renderDimModels();refreshAllPanelDimSelects();}
+function deleteWeightModel(i){_weightModels.splice(i,1);renderWeightModels();refreshAllPanelWeightSelects();}
+
+function applyDimModelByCustomer(name){
+  const m=_dimModels.find(d=>d.name.toUpperCase()===name.toUpperCase());
+  if(!m)return;
+  couleurs.forEach((_,ci)=>{
+    const p=document.getElementById('panel-'+ci);if(!p)return;
+    p.querySelectorAll('.dim-L').forEach(e=>e.value=m.L);
+    p.querySelectorAll('.dim-l').forEach(e=>e.value=m.l);
+    p.querySelectorAll('.dim-h').forEach(e=>e.value=m.h);
+  });
+}
+
+function setMaxSizes(v,btn){
+  _maxSizes=v;
+  document.querySelectorAll('.max-size-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function toggleForceSingleCtn(){
+  _forceSingleCtn=!_forceSingleCtn;
+  const el=document.getElementById('toggle-force-ctn');
+  const badge=document.getElementById('tfc-badge');
+  el.classList.toggle('on',_forceSingleCtn);
+  badge.textContent=_forceSingleCtn?'ACTIVÉ':'DÉSACTIVÉ';
+}
+
+function reinitialiser(){
+  if(!confirm('Réinitialiser tous les champs et données ?'))return;
+  ['info-order','info-customer','info-po','info-style','info-invoice','info-destination','info-address','info-port-depart','info-port-arrivee','info-pays','info-total-qty','info-filename','info-color-display'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.value='';
+  });
+  selectMode('strict_solide');
+  _forceSingleCtn=false;
+  const tfc=document.getElementById('toggle-force-ctn');const tfcb=document.getElementById('tfc-badge');
+  if(tfc)tfc.classList.remove('on');if(tfcb)tfcb.textContent='DÉSACTIVÉ';
+  document.getElementById('color-panels').innerHTML='';
+  couleurs=[];activeCIdx=0;_allResults=[];
+  initCouleurs();
+  const rs=document.getElementById('result-section');rs.innerHTML='';rs.style.display='none';
+  document.getElementById('btnExcel').style.display='none';
+  document.getElementById('btnPDF').style.display='none';
+  calculerQty();
+}
+
+function updateFilename(){
+  const o=document.getElementById('info-order').value.trim();
+  const c=document.getElementById('info-customer').value.trim();
+  const p=document.getElementById('info-po').value.trim();
+  const s=document.getElementById('info-style').value.trim();
+  const q=document.getElementById('info-total-qty').value.replace(/[^0-9]/g,'');
+  const parts=[o,c,p,s,q?q+'PCS':''].filter(Boolean);
+  document.getElementById('info-filename').value=parts.length?'PACKING LIST '+parts.join(' '):'';
+}
+
+function updateColorDisplay(){
+  const names=couleurs.map(c=>c.nom).filter(Boolean).join(', ');
+  document.getElementById('info-color-display').value=names||'';
+}
+
+function selectMode(v){
+  document.querySelector('input[name="modeEmballage"][value="'+v+'"]').checked=true;
+  document.getElementById('card-solid').classList.toggle('active',v==='strict_solide');
+  document.getElementById('card-mixed').classList.toggle('active',v==='mixte_autorise');
+  document.getElementById('max-sizes-row').classList.toggle('visible',v==='mixte_autorise');
+}
+
+// ========= COLORS =========
+function initCouleurs(){couleurs=[];ajouterCouleur();}
+
+function ajouterCouleur(nom){
+  const i=couleurs.length;
+  let srcData=i>0?getSrcData(0):null;
+  couleurs.push({nom:nom||('COULEUR '+(i+1)),mode:'inherit'});
+  renderTabs();appendPanel(i,srcData);setActive(i);updateColorDisplay();
+}
+
+function getSrcData(ci){
+  const p=document.getElementById('panel-'+ci);if(!p)return null;
+  return{
+    names:Array.from(p.querySelectorAll('.size-name')).map(e=>e.value),
+    caps:Array.from(p.querySelectorAll('.size-cap')).map(e=>e.value),
+    wps:Array.from(p.querySelectorAll('.size-w-piece')).map(e=>e.value),
+    wcs:Array.from(p.querySelectorAll('.size-w-carton')).map(e=>e.value),
+    Ls:Array.from(p.querySelectorAll('.dim-L')).map(e=>e.value),
+    ls:Array.from(p.querySelectorAll('.dim-l')).map(e=>e.value),
+    hs:Array.from(p.querySelectorAll('.dim-h')).map(e=>e.value)
+  };
+}
+
+function supprimerCouleur(){
+  if(couleurs.length<=1){alert("Minimum 1 couleur.");return;}
+  couleurs.splice(activeCIdx,1);
+  document.getElementById('color-panels').innerHTML='';
+  couleurs.forEach((_,i)=>appendPanel(i,null));
+  renderTabs();setActive(Math.min(activeCIdx,couleurs.length-1));updateColorDisplay();
+}
+
+function renderTabs(){
+  const el=document.getElementById('color-tabs');el.innerHTML='';
+  couleurs.forEach((c,i)=>{
+    const t=document.createElement('div');
+    t.className='color-tab'+(i===activeCIdx?' active':'');
+    t.innerHTML='<span class="tab-dot" style="background:'+PALETTE[i%PALETTE.length]+'"></span>'+c.nom;
+    t.onclick=()=>setActive(i);el.appendChild(t);
+  });
+}
+
+function appendPanel(idx,srcData){
+  const color=PALETTE[idx%PALETTE.length];
+  const nom=couleurs[idx].nom;
+  const d=document.createElement('div');
+  d.className='color-panel'+(idx===activeCIdx?' active':'');
+  d.id='panel-'+idx;
+  d.innerHTML=buildPanel(idx,color,nom,srcData);
+  document.getElementById('color-panels').appendChild(d);
+  d.querySelector('.cnm').addEventListener('input',function(){
+    couleurs[idx].nom=this.value.trim().toUpperCase()||('COULEUR '+(idx+1));
+    renderTabs();calculerQty();updateFilename();updateColorDisplay();
+  });
+  d.querySelectorAll('.size-qty,.size-cap').forEach(e=>e.addEventListener('input',calculerQty));
+}
+
+function buildPanel(idx,color,nom,srcData){
+  const sizes=srcData?srcData.names:['XS','S','M','L','XL'];
+  const n=sizes.length;
+  const qvals=Array(n).fill(0);
+  const cvals=srcData?srcData.caps:Array(n).fill(25);
+  const wpvals=srcData?srcData.wps:[0.250,0.270,0.300,0.320,0.350].slice(0,n);
+  const wcvals=srcData?srcData.wcs:Array(n).fill(0.80);
+  const Lvals=srcData?srcData.Ls:Array(n).fill(61);
+  const lvals=srcData?srcData.ls:Array(n).fill(41);
+  const hvals=srcData?srcData.hs:Array(n).fill(30);
+
+  function td_name(v){return '<td><input type="text" class="inp inp-name size-name" value="'+v+'"></td>';}
+  function td_qty(v,cls){return '<td><input type="number" class="inp inp-qty '+cls+'" value="'+v+'" oninput="calculerQty()" placeholder="0"></td>';}
+  function td_num(v,cls,step){return '<td><input type="number" step="'+step+'" class="inp inp-qty '+cls+'" value="'+v+'"></td>';}
+
+  let sizeHeaders=sizes.map(s=>'<th>'+s+'</th>').join('');
+
+  let r='<div class="color-name-row">'
+    +'<div class="color-swatch" style="background:'+color+'"></div>'
+    +'<input type="text" class="color-name-input cnm" value="'+nom+'" placeholder="NOM COULEUR">'
+    +'<span style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-left:8px;">→ onglet Excel</span>'
+    +'</div>'
+    +'<div class="per-color-mode-row">'
+    +'<span class="per-color-mode-label">Mode emballage :</span>'
+    +'<button class="per-color-mode-btn active-solid" id="pcm-solid-'+idx+'" onclick="setColorMode('+idx+',\'strict_solide\')">📦 SOLID STRICT</button>'
+    +'<button class="per-color-mode-btn" id="pcm-mixed-'+idx+'" onclick="setColorMode('+idx+',\'mixte_autorise\')">🔀 MIXED</button>'
+    +'<button class="per-color-mode-btn" id="pcm-inherit-'+idx+'" onclick="setColorMode('+idx+',\'inherit\')" style="border-color:var(--warn);color:var(--warn);">⚙️ Hériter global</button>'
+    +'</div>'
+    // Modèles sélecteurs côte à côte
+    +'<div class="models-apply-row">'
+    +'<div class="models-apply-item">'
+    +'<span class="models-apply-label">📐 Dimensions :</span>'
+    +'<select class="dim-model-select" id="dim-model-sel-'+idx+'" onchange="applyDimModelToPanel('+idx+',this.value)">'
+    +'<option value="">-- Manuel --</option>'
+    +_dimModels.map(m=>'<option value="'+m.name+'">'+m.name+' ('+m.L+'×'+m.l+'×'+m.h+'cm)</option>').join('')
+    +'</select>'
+    +'</div>'
+    +'<div class="models-apply-item" style="margin-left:16px;">'
+    +'<span class="models-apply-label">⚖️ Poids :</span>'
+    +'<select class="dim-model-select" id="weight-model-sel-'+idx+'" onchange="applyWeightModelToPanel('+idx+',this.value)" style="border-color:color-mix(in srgb,var(--warn) 50%,transparent);">'
+    +'<option value="">-- Manuel --</option>'
+    +_weightModels.map(m=>'<option value="'+m.name+'">'+m.name+' (P:'+m.wPiece+'kg / C:'+m.wCarton+'kg)</option>').join('')
+    +'</select>'
+    +'</div>'
+    +'</div>'
+    +'<div class="table-wrap"><table class="input-table">'
+    +'<thead><tr><th style="text-align:left;padding-left:12px;">LIGNE</th>'+sizeHeaders+'</tr></thead>'
+    +'<tbody>';
+  r+='<tr id="rh-'+idx+'"><td class="row-label">Taille</td>'+sizes.map(s=>td_name(s)).join('')+'</tr>';
+  r+='<tr id="rq-'+idx+'"><td class="row-label">QTY Totale</td>'+qvals.map(v=>td_qty(v,'size-qty')).join('')+'</tr>';
+  r+='<tr id="rc-'+idx+'"><td class="row-label">Pièces / Carton</td>'+cvals.map(v=>td_num(v,'size-cap','1')).join('')+'</tr>';
+  r+='<tr id="rbd-'+idx+'"><td class="row-label">Box Détail (✏️)</td>';
+  sizes.forEach((_,si)=>{r+='<td><button class="btn-box-detail" onclick="openBoxModal('+idx+','+si+')" title="Modifier poids/dimensions">✏️</button></td>';});
+  r+='</tr>';
+  r+='<tr id="rwp-'+idx+'" style="display:none;"><td class="row-label">Poids Pièce (KG)</td>'+wpvals.map(v=>td_num(v,'size-w-piece','0.001')).join('')+'</tr>';
+  r+='<tr id="rwc-'+idx+'" style="display:none;"><td class="row-label">Poids Carton Vide (KG)</td>'+wcvals.map(v=>td_num(v,'size-w-carton','0.01')).join('')+'</tr>';
+  r+='<tr id="rd-'+idx+'" style="display:none;"><td class="row-label">Dimensions (cm)</td>';
+  sizes.forEach((_,i)=>{
+    r+='<td><input type="number" class="inp inp-cbm dim-L" value="'+Lvals[i]+'">'
+      +'<input type="number" class="inp inp-cbm dim-l" value="'+lvals[i]+'">'
+      +'<input type="number" class="inp inp-cbm dim-h" value="'+hvals[i]+'"></td>';
+  });
+  r+='</tr>';
+  r+='</tbody></table></div>'
+    +'<div class="actions-row" style="margin-top:12px;">'
+    +'<button class="btn btn-add" onclick="addTaille('+idx+')">＋ Taille</button>'
+    +'<button class="btn btn-remove" onclick="delTaille('+idx+')">－ Taille</button>'
+    +'</div>';
+  return r;
+}
+
+function setColorMode(idx,mode){
+  couleurs[idx].mode=mode;
+  ['solid','mixed','inherit'].forEach(m=>{const b=document.getElementById('pcm-'+m+'-'+idx);if(b){b.classList.remove('active-solid','active-mixed');}});
+  const sb=document.getElementById('pcm-solid-'+idx);const mb=document.getElementById('pcm-mixed-'+idx);const ib=document.getElementById('pcm-inherit-'+idx);
+  if(mode==='strict_solide'&&sb)sb.classList.add('active-solid');
+  else if(mode==='mixte_autorise'&&mb)mb.classList.add('active-mixed');
+  else if(ib){ib.style.borderColor='var(--warn)';ib.style.color='var(--warn)';}
+}
+
+function applyDimModelToPanel(idx,modelName){
+  const m=_dimModels.find(d=>d.name===modelName);if(!m)return;
+  const p=document.getElementById('panel-'+idx);if(!p)return;
+  p.querySelectorAll('.dim-L').forEach(e=>e.value=m.L);
+  p.querySelectorAll('.dim-l').forEach(e=>e.value=m.l);
+  p.querySelectorAll('.dim-h').forEach(e=>e.value=m.h);
+}
+
+function applyWeightModelToPanel(idx,modelName){
+  const m=_weightModels.find(d=>d.name===modelName);if(!m)return;
+  const p=document.getElementById('panel-'+idx);if(!p)return;
+  p.querySelectorAll('.size-w-piece').forEach(e=>e.value=m.wPiece);
+  p.querySelectorAll('.size-w-carton').forEach(e=>e.value=m.wCarton);
+}
+
+function setActive(i){
+  activeCIdx=i;
+  document.querySelectorAll('.color-panel').forEach((p,j)=>p.classList.toggle('active',j===i));
+  renderTabs();
+}
+
+function calculerQty(){
+  let t=0;document.querySelectorAll('.size-qty').forEach(i=>t+=parseInt(i.value)||0);
+  document.getElementById('info-total-qty').value=t>0?t.toLocaleString('fr-FR')+' PCS':'';
+  updateFilename();
+}
+
+function addTaille(ci){
+  const rbd=document.getElementById('rbd-'+ci);
+  if(rbd){const si=rbd.cells.length-1;rbd.insertAdjacentHTML('beforeend','<td><button class="btn-box-detail" onclick="openBoxModal('+ci+','+si+')" title="Modifier poids/dimensions">✏️</button></td>');}
+  [['rh-'+ci,'<td><input type="text" class="inp inp-name size-name" value="TAILLE"></td>'],
+   ['rq-'+ci,'<td><input type="number" class="inp inp-qty size-qty" value="0" oninput="calculerQty()" placeholder="0"></td>'],
+   ['rc-'+ci,'<td><input type="number" class="inp inp-qty size-cap" value="25"></td>'],
+   ['rwp-'+ci,'<td><input type="number" step="0.001" class="inp inp-qty size-w-piece" value="0.250"></td>'],
+   ['rwc-'+ci,'<td><input type="number" step="0.01" class="inp inp-qty size-w-carton" value="0.80"></td>'],
+   ['rd-'+ci,'<td><input type="number" class="inp inp-cbm dim-L" value="61"><input type="number" class="inp inp-cbm dim-l" value="41"><input type="number" class="inp inp-cbm dim-h" value="30"></td>']
+  ].forEach(([id,html])=>{const el=document.getElementById(id);if(el)el.insertAdjacentHTML('beforeend',html);});
+  calculerQty();
+}
+
+function delTaille(ci){
+  const r=document.getElementById('rh-'+ci);
+  if(r.cells.length<=2){alert("Minimum 1 taille.");return;}
+  const rbd=document.getElementById('rbd-'+ci);
+  ['rh-','rq-','rc-','rwp-','rwc-','rd-'].forEach(p=>{const el=document.getElementById(p+ci);if(el&&el.cells.length>2)el.removeChild(el.lastChild);});
+  if(rbd&&rbd.cells.length>2)rbd.removeChild(rbd.lastChild);
+  calculerQty();
+}
+
+// ========= BOX MODAL =========
+function openBoxModal(ci,si){
+  _boxModalCtx={ci,si};
+  const p=document.getElementById('panel-'+ci);
+  const names=p.querySelectorAll('.size-name');
+  document.getElementById('bm-size-label').textContent=names[si]?names[si].value:'?';
+  const wps=p.querySelectorAll('.size-w-piece');const wcs=p.querySelectorAll('.size-w-carton');
+  const Ls=p.querySelectorAll('.dim-L');const ls=p.querySelectorAll('.dim-l');const hs=p.querySelectorAll('.dim-h');
+  document.getElementById('bm-wpiece').value=wps[si]?wps[si].value:'';
+  document.getElementById('bm-wcarton').value=wcs[si]?wcs[si].value:'';
+  document.getElementById('bm-dimL').value=Ls[si]?Ls[si].value:'';
+  document.getElementById('bm-diml').value=ls[si]?ls[si].value:'';
+  document.getElementById('bm-dimh').value=hs[si]?hs[si].value:'';
+  document.getElementById('box-modal-overlay').classList.add('open');
+}
+function closeBoxModal(){document.getElementById('box-modal-overlay').classList.remove('open');_boxModalCtx=null;}
+function saveBoxModal(){
+  if(!_boxModalCtx)return;
+  const{ci,si}=_boxModalCtx;
+  const p=document.getElementById('panel-'+ci);
+  const wps=p.querySelectorAll('.size-w-piece');const wcs=p.querySelectorAll('.size-w-carton');
+  const Ls=p.querySelectorAll('.dim-L');const ls=p.querySelectorAll('.dim-l');const hs=p.querySelectorAll('.dim-h');
+  if(wps[si])wps[si].value=document.getElementById('bm-wpiece').value;
+  if(wcs[si])wcs[si].value=document.getElementById('bm-wcarton').value;
+  if(Ls[si])Ls[si].value=document.getElementById('bm-dimL').value;
+  if(ls[si])ls[si].value=document.getElementById('bm-diml').value;
+  if(hs[si])hs[si].value=document.getElementById('bm-dimh').value;
+  closeBoxModal();
+}
+
+// ========= READ PANEL =========
+function lirePanel(ci){
+  const p=document.getElementById('panel-'+ci);
+  const names=p.querySelectorAll('.size-name');const qtys=p.querySelectorAll('.size-qty');
+  const caps=p.querySelectorAll('.size-cap');const wps=p.querySelectorAll('.size-w-piece');
+  const wcs=p.querySelectorAll('.size-w-carton');const Ls=p.querySelectorAll('.dim-L');
+  const ls=p.querySelectorAll('.dim-l');const hs=p.querySelectorAll('.dim-h');
+  let tailles=[],donnees={};
+  for(let i=0;i<names.length;i++){
+    let n=(names[i].value.trim().toUpperCase())||'?';
+    let L=parseFloat(Ls[i]?Ls[i].value:0)||0;
+    let l2=parseFloat(ls[i]?ls[i].value:0)||0;
+    let h=parseFloat(hs[i]?hs[i].value:0)||0;
+    tailles.push(n);
+    donnees[n]={qtyTot:parseInt(qtys[i].value)||0,cap:parseInt(caps[i].value)||1,
+      wPiece:parseFloat(wps[i]?wps[i].value:0)||0,wCarton:parseFloat(wcs[i]?wcs[i].value:0)||0,
+      cbmUnit:(L*l2*h)/1000000,restes:0,
+      dimL:L,diml:l2,dimH:h};
+  }
+  return{tailles,donnees};
+}
+
+// ========= GENERATE =========
+function generer(){
+  const globalMode=document.querySelector('input[name="modeEmballage"]:checked').value;
+  const rs=document.getElementById('result-section');
+  rs.innerHTML='';_allResults=[];
+  const order=document.getElementById('info-order').value.trim();
+  const customer=document.getElementById('info-customer').value.trim();
+  const po=document.getElementById('info-po').value.trim();
+  const style=document.getElementById('info-style').value.trim();
+  const invoice=document.getElementById('info-invoice').value.trim();
+  const destination=document.getElementById('info-destination').value.trim();
+  const address=document.getElementById('info-address').value.trim();
+  const portDepart=document.getElementById('info-port-depart').value.trim();
+  const portArrivee=document.getElementById('info-port-arrivee').value.trim();
+  const pays=document.getElementById('info-pays').value.trim();
+  const qty=document.getElementById('info-total-qty').value;
+  const meta={order,customer,po,style,invoice,destination,address,portDepart,portArrivee,pays,qty};
+  _lastMeta=meta;
+
+  couleurs.forEach((coul,ci)=>{
+    const{tailles,donnees}=lirePanel(ci);
+    const color=PALETTE[ci%PALETTE.length];
+    let mode=coul.mode==='inherit'?globalMode:coul.mode;
+    const html=buildResultSection(coul.nom,ci,tailles,donnees,mode,color,meta);
+    rs.insertAdjacentHTML('beforeend',html);
+    _allResults.push({nom:coul.nom,color,tailles,donnees,statsData:null,mode});
+    setTimeout(()=>{
+      document.querySelectorAll('#rb-'+ci+' .editable-cell').forEach(e=>e.addEventListener('input',()=>recalc(ci,tailles,donnees)));
+      recalc(ci,tailles,donnees);
+    },0);
+  });
+
+  if(couleurs.length>1){
+    setTimeout(()=>buildCombinedPL(globalMode,meta),80);
+  } else {
+    setTimeout(()=>buildBreakdownForSingle(0,meta),150);
+  }
+
+  rs.style.display='block';
+  document.getElementById('btnExcel').style.display='flex';
+  document.getElementById('btnPDF').style.display='flex';
+  rs.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ========= BUILD BODY =========
+function buildBodyWithColor(nom,ci,tailles,donnees,mode,color){
+  let body='',num=1,restes=[];
+  const colorCell='<td class="color-stripe-cell" style="color:'+color+';background:color-mix(in srgb,'+color+' 12%,transparent);">'+nom+'</td>';
+  const maxSizes=_maxSizes;
+
+  if(_forceSingleCtn){
+    body+='<tr class="row-data solid-row" data-type="solid" data-nbr="1"><td><b>1-1</b></td>'+colorCell;
+    tailles.forEach(t=>{const qtyTot=donnees[t].qtyTot;body+='<td>'+(qtyTot>0?'<b>'+qtyTot+'</b>':'')+'</td>';});
+    body+='<td class="ctc"></td><td><b>1</b></td><td class="ctp"></td><td class="cnw"></td><td class="cgw"></td><td class="ccb"></td></tr>';
+    body+='<tr class="total-row"><td>TOTALE</td><td style="font-size:10px;font-weight:700;">'+nom+'</td>';
+    tailles.forEach(t=>{body+='<td id="tt-'+ci+'-'+t+'">0</td>';});
+    body+='<td>—</td><td id="tt-'+ci+'-c">0</td><td id="tt-'+ci+'-p">0</td><td id="tt-'+ci+'-n">0.00</td><td id="tt-'+ci+'-g">0.00</td><td id="tt-'+ci+'-v">0.0000</td></tr>';
+    return body;
+  }
+
+  tailles.forEach(t=>{
+    const qtyTot=donnees[t].qtyTot;const cap=donnees[t].cap;
+    if(qtyTot<=0){donnees[t].restes=0;return;}
+    if(mode==='mixte_autorise'){
+      const n=Math.floor(qtyTot/cap);const reste=qtyTot%cap;
+      donnees[t].restes=reste;
+      if(n>0){
+        const plage=num+'-'+(num+n-1);
+        body+='<tr class="row-data solid-row" data-type="solid" data-nbr="'+n+'"><td><b>'+plage+'</b></td>'+colorCell;
+        tailles.forEach(tc=>{body+='<td>'+(tc===t?'<b>'+cap+'</b>':'')+'</td>';});
+        body+='<td class="ctc"></td><td><b>'+n+'</b></td><td class="ctp"></td><td class="cnw"></td><td class="cgw"></td><td class="ccb"></td></tr>';
+        num+=n;
+      }
+      const qteReste=(n===0)?qtyTot:reste;
+      if(qteReste>0)restes.push({taille:t,qte:qteReste,cap:cap});
+    }else{
+      if(qtyTot<cap){
+        donnees[t].restes=0;
+        const plage=num+'-'+num;
+        body+='<tr class="row-data solid-row" data-type="solid" data-nbr="1"><td><b>'+plage+'</b></td>'+colorCell;
+        tailles.forEach(tc=>{body+='<td>'+(tc===t?'<b>'+qtyTot+'</b>':'')+'</td>';});
+        body+='<td class="ctc"></td><td><b>1</b></td><td class="ctp"></td><td class="cnw"></td><td class="cgw"></td><td class="ccb"></td></tr>';
+        num++;return;
+      }
+      const n=Math.floor(qtyTot/cap);donnees[t].restes=qtyTot%cap;
+      if(n>0){
+        const plage=num+'-'+(num+n-1);
+        body+='<tr class="row-data solid-row" data-type="solid" data-nbr="'+n+'"><td><b>'+plage+'</b></td>'+colorCell;
+        tailles.forEach(tc=>{body+='<td>'+(tc===t?'<b>'+cap+'</b>':'')+'</td>';});
+        body+='<td class="ctc"></td><td><b>'+n+'</b></td><td class="ctp"></td><td class="cnw"></td><td class="cgw"></td><td class="ccb"></td></tr>';
+        num+=n;
+      }
+      if(donnees[t].restes>0){
+        const plage=num+'-'+num;
+        body+='<tr class="row-data solid-row" data-type="solid_reste" data-nbr="1"><td><b>'+plage+'</b></td>'+colorCell;
+        tailles.forEach(tc=>{body+='<td>'+(tc===t?'<b>'+donnees[t].restes+'</b>':'')+'</td>';});
+        body+='<td class="ctc"></td><td><b>1</b></td><td class="ctp"></td><td class="cnw"></td><td class="cgw"></td><td class="ccb"></td></tr>';
+        num++;
+      }
+    }
+  });
+
+  if(mode==='mixte_autorise'&&restes.length>0){
+    while(restes.length>0){
+      restes.sort((a,b)=>b.qte-a.qte);
+      const candidates=restes.slice(0,maxSizes);
+      const fixedCap=Math.max(...candidates.map(r=>r.cap));
+      let selected=[],pcsInCtn=0;
+      for(let i=0;i<restes.length;i++){
+        const item=restes[i];
+        if(selected.length>=maxSizes)break;
+        if(pcsInCtn+item.qte>fixedCap)continue;
+        selected.push({...item});pcsInCtn+=item.qte;
+      }
+      if(selected.length===0)selected.push({...restes[0]});
+      selected.forEach(sel=>{const idx=restes.findIndex(r=>r.taille===sel.taille);if(idx>=0)restes.splice(idx,1);});
+      let pdc={};tailles.forEach(t=>pdc[t]=0);
+      selected.forEach(s=>pdc[s.taille]=s.qte);
+      const plage=num+'-'+num;
+      body+='<tr class="row-data mixed-row" data-type="mixed" data-nbr="1"><td><b>'+plage+'</b></td>'+colorCell;
+      tailles.forEach(t=>{body+='<td><input type="number" class="editable-cell" data-taille="'+t+'" value="'+(pdc[t]||'')+'"></td>';});
+      body+='<td class="ctc"></td><td><b>1</b></td><td class="ctp"></td><td class="cnw"></td><td class="cgw"></td><td class="ccb"></td></tr>';
+      num++;
+    }
+  }
+  body+='<tr class="total-row"><td>TOTALE</td><td style="font-size:10px;font-weight:700;">'+nom+'</td>';
+  tailles.forEach(t=>{body+='<td id="tt-'+ci+'-'+t+'">0</td>';});
+  body+='<td>—</td><td id="tt-'+ci+'-c">0</td><td id="tt-'+ci+'-p">0</td><td id="tt-'+ci+'-n">0.00</td><td id="tt-'+ci+'-g">0.00</td><td id="tt-'+ci+'-v">0.0000</td></tr>';
+  return body;
+}
+
+function buildResultSection(nom,ci,tailles,donnees,mode,color,meta){
+  const body=buildBodyWithColor(nom,ci,tailles,donnees,mode,color);
+  let hdr='<tr>';
+  hdr+='<th style="text-align:left;padding-left:14px;border-left:3px solid '+color+';">PACKING N°</th>';
+  hdr+='<th style="background:color-mix(in srgb,'+color+' 20%,var(--surface2));color:'+color+';">COLOR/SIZE</th>';
+  tailles.forEach(t=>{hdr+='<th>'+t+'</th>';});
+  hdr+='<th>PCS/CTN</th><th>NB CTN</th><th>TOTAL QTY</th><th class="th-net">NET WEIGHT</th><th class="th-gross">GROSS WEIGHT</th><th>CBM m³</th></tr>';
+  const modeAlert=mode==='strict_solide'
+    ?'<div class="info-alert solid">🔒 <b>SOLID PACK STRICT</b></div>'
+    :'<div class="info-alert mixed">🔀 <b>MIXED PACK AUTORISÉ (max '+_maxSizes+' tailles)</b></div>';
+
+  const pdfHeader='<div class="pdf-doc-header" style="display:none;">'
+    +'<h1>PL '+meta.customer+' '+meta.order+'</h1>'
+    +'<div class="pdf-info-block">'
+    +(meta.invoice?'<b>INVOICE N° :</b> '+meta.invoice+'<br>':'')
+    +'<b>Mers :</b><br>'
+    +meta.customer+(meta.address?'<br>'+meta.address:'')
+    +(meta.destination?'<br>'+meta.destination:'')
+    +(meta.pays?'<br>'+meta.pays:'')
+    +(meta.portDepart?'<br><b>Port Départ :</b> '+meta.portDepart:'')
+    +(meta.portArrivee?'<br><b>Port Arrivée :</b> '+meta.portArrivee:'')
+    +'</div>'
+    +'</div>';
+
+  return '<div class="card result-card" id="rs-'+ci+'" style="margin-bottom:4px;">'
+    +pdfHeader
+    +'<div class="result-color-title"><span class="dot-color" style="background:'+color+'"></span>PACKING LIST — '+nom+'</div>'
+    +'<div class="order-meta">'
+    +'<span>📋 Order: <b>'+meta.order+'</b></span>'
+    +(meta.style?'<span>🏷️ Style: <b>'+meta.style+'</b></span>':'')
+    +'<span>👤 <b>'+meta.customer+'</b></span>'
+    +'<span>PO#: <b>'+meta.po+'</b></span>'
+    +(meta.invoice?'<span>Invoice: <b>'+meta.invoice+'</b></span>':'')
+    +(meta.destination?'<span>✈️ Dest: <b>'+meta.destination+'</b></span>':'')
+    +(meta.portDepart?'<span>🚢 From: <b>'+meta.portDepart+'</b></span>':'')
+    +(meta.portArrivee?'<span>🏁 To: <b>'+meta.portArrivee+'</b></span>':'')
+    +'<span>📦 <b>'+meta.qty+'</b></span>'
+    +'</div>'
+    +modeAlert
+    +'<div class="stats-bar" id="sb-'+ci+'"></div>'
+    +'<div class="table-wrap"><table class="result-table"><thead>'+hdr+'</thead><tbody id="rb-'+ci+'">'+body+'</tbody></table></div>'
+    +'</div>';
+}
+
+// ========= RECALC =========
+function recalc(ci,tailles,donnees){
+  const tbody=document.getElementById('rb-'+ci);if(!tbody)return;
+  const rows=tbody.querySelectorAll('.row-data');
+  let tot={c:0,p:0,n:0,g:0,v:0};
+  tailles.forEach(t=>tot[t]=0);
+  rows.forEach(row=>{
+    let nbr=parseInt(row.getAttribute('data-nbr'))||0;
+    let solid=['solid','solid_reste'].includes(row.getAttribute('data-type'));
+    let pcs=0,net=0,wv=0,cbm=0;
+    tailles.forEach((t,i)=>{
+      let q=0;
+      if(solid)q=parseInt(row.cells[i+2].innerText.trim())||0;
+      else{let inp=row.querySelector('[data-taille="'+t+'"]');q=inp?(parseInt(inp.value)||0):0;}
+      if(q>0){if(donnees[t].wCarton>wv)wv=donnees[t].wCarton;if(donnees[t].cbmUnit>cbm)cbm=donnees[t].cbmUnit;}
+      pcs+=q;net+=q*donnees[t].wPiece;tot[t]+=q*nbr;
+    });
+    let tp=pcs*nbr,tn=net*nbr,tg=tn+wv*nbr,tv=cbm*nbr;
+    row.querySelector('.ctc').innerHTML='<b>'+(pcs||'')+'</b>';
+    row.querySelector('.ctp').innerHTML='<b>'+(tp||'')+'</b>';
+    row.querySelector('.cnw').innerHTML='<b class="td-net">'+tn.toFixed(2)+'</b>';
+    row.querySelector('.cgw').innerHTML='<b class="td-gross">'+tg.toFixed(2)+'</b>';
+    row.querySelector('.ccb').innerHTML='<b>'+tv.toFixed(4)+'</b>';
+    tot.c+=nbr;tot.p+=tp;tot.n+=tn;tot.g+=tg;tot.v+=tv;
+  });
+  tailles.forEach(t=>{const e=document.getElementById('tt-'+ci+'-'+t);if(e)e.textContent=tot[t];});
+  [['c',tot.c],['p',tot.p],['n',tot.n.toFixed(2)],['g',tot.g.toFixed(2)],['v',tot.v.toFixed(4)]].forEach(([k,v])=>{
+    const e=document.getElementById('tt-'+ci+'-'+k);if(e)e.textContent=v;
+  });
+  const sb=document.getElementById('sb-'+ci);
+  if(sb)sb.innerHTML='<div class="stat-chip"><span class="stat-label">Cartons</span><span class="stat-value c-accent">'+tot.c+'</span></div>'
+    +'<div class="stat-chip"><span class="stat-label">Pièces</span><span class="stat-value c-green">'+tot.p.toLocaleString('fr-FR')+'</span></div>'
+    +'<div class="stat-chip"><span class="stat-label">NET KG</span><span class="stat-value c-warn">'+tot.n.toFixed(2)+'</span></div>'
+    +'<div class="stat-chip"><span class="stat-label">GROSS KG</span><span class="stat-value c-warn">'+tot.g.toFixed(2)+'</span></div>'
+    +'<div class="stat-chip"><span class="stat-label">CBM m³</span><span class="stat-value c-purple">'+tot.v.toFixed(4)+'</span></div>';
+  if(_allResults[ci])_allResults[ci].statsData=tot;
+  if(_allResults.length>1)setTimeout(()=>rebuildCombinedPL(),20);
+  if(_allResults.length===1)setTimeout(()=>buildBreakdownForSingle(0,_lastMeta||{}),30);
+}
+
+let _lastMeta={};
+
+// ========= BREAKDOWN — sans STYLE/COLOR WEIGHT & DIMENSION en impression =========
+function buildBreakdownHTML(allTailles,colorData,meta,grandTot){
+  const style=meta.style||'';const po=meta.po||'';
+
+  let tblHdr='<thead><tr><th style="text-align:left;padding-left:10px;">COLOR/SIZE</th>';
+  allTailles.forEach(t=>tblHdr+='<th>'+t+'</th>');
+  tblHdr+='<th>TTL</th></tr></thead>';
+
+  let tblBody='<tbody>';
+  let totBySize={};allTailles.forEach(t=>totBySize[t]=0);
+  let grandPcs=0;
+
+  colorData.forEach(({nom,color,tailles,donnees,statsData})=>{
+    let rowTotal=0;
+    let sizeVals={};allTailles.forEach(t=>sizeVals[t]=0);
+    if(statsData){
+      tailles.forEach(t=>{
+        sizeVals[t]=(statsData[t]||0);
+        totBySize[t]=(totBySize[t]||0)+(statsData[t]||0);
+        rowTotal+=(statsData[t]||0);
+      });
+    }
+    grandPcs+=rowTotal;
+    const bg=nom.toUpperCase().includes('GRAY')||nom.toUpperCase().includes('GREY')?'':'color-mix(in srgb,'+color+' 15%,transparent)';
+    tblBody+='<tr><td class="bk-color-cell" style="background:'+bg+';color:'+color+';font-weight:700;">'+nom+'</td>';
+    allTailles.forEach(t=>tblBody+='<td>'+(sizeVals[t]||'')+'</td>');
+    tblBody+='<td><b>'+rowTotal+'</b></td></tr>';
+  });
+
+  tblBody+='<tr class="bk-ttl-row"><td class="bk-color-cell"><b>TTL</b></td>';
+  allTailles.forEach(t=>tblBody+='<td><b>'+(totBySize[t]||0)+'</b></td>');
+  tblBody+='<td><b>'+grandPcs+'</b></td></tr>';
+  tblBody+='</tbody>';
+
+  let cartonSize='';let cbmTotal=0;
+  if(colorData.length>0){
+    const d=colorData[0].donnees;const t0=colorData[0].tailles[0];
+    if(t0&&d[t0]){
+      const L=d[t0].dimL||0;const l=d[t0].diml||0;const h=d[t0].dimH||0;
+      if(L&&l&&h)cartonSize=L+' X '+l+' X '+h+' CM';
+    }
+    colorData.forEach(r=>{if(r.statsData)cbmTotal+=r.statsData.v||0;});
+  }
+
+  let netTotal=grandTot.n||0;let grossTotal=grandTot.g||0;
+  let cntTotal=grandTot.c||0;
+
+  const summary='<div class="breakdown-summary">'
+    +'<div class="breakdown-kv"><span class="bk-key">N° OF QTY :</span><span class="bk-val">'+grandPcs+'</span></div>'
+    +'<div class="breakdown-kv"><span class="bk-key">N° OF CNTS :</span><span class="bk-val">'+cntTotal+'</span></div>'
+    +'<div class="breakdown-kv"><span class="bk-key">N.W (kg) :</span><span class="bk-val">'+netTotal.toFixed(2)+'</span></div>'
+    +'<div class="breakdown-kv"><span class="bk-key">GW (kg) :</span><span class="bk-val">'+grossTotal.toFixed(2)+'</span></div>'
+    +(cartonSize?'<div class="breakdown-kv"><span class="bk-key">Carton Size (CM)</span><span class="bk-val">'+cartonSize+'</span></div>':'')
+    +'<div class="breakdown-kv"><span class="bk-key">CBM (m3) :</span><span class="bk-val">'+cbmTotal.toFixed(3)+' m³</span></div>'
+    +'</div>';
+
+  // Tableau dim — visible à l'écran, MASQUÉ en impression via CSS .dim-section{display:none!important}
+  let dimHTML='<div class="dim-section" style="margin-top:12px;">'
+    +'<div class="dim-title">STYLE/COLOR WEIGHT & DIMENSION <span style="font-size:10px;font-weight:400;opacity:.6;">(écran uniquement — masqué à l\'impression)</span></div>'
+    +'<table class="dim-table"><thead><tr>'
+    +'<th>COLOR/STYLE</th><th>SIZE</th><th>LENGTH</th><th>WIDTH</th><th>HEIGHT</th><th>WEIGHT (oz)</th>'
+    +'</tr></thead><tbody>';
+
+  colorData.forEach(({nom,tailles,donnees})=>{
+    tailles.forEach(t=>{
+      const d=donnees[t];
+      if(!d)return;
+      const wOz=d.wPiece?(d.wPiece*35.274).toFixed(2):'-';
+      const L=d.dimL?d.dimL+' cm':'-';const l=d.diml?d.diml+' cm':'-';const h=d.dimH?d.dimH+' cm':'-';
+      dimHTML+='<tr><td>'+nom+'</td><td>'+t+'</td><td>'+L+'</td><td>'+l+'</td><td>'+h+'</td><td>'+wOz+' oz</td></tr>';
+    });
+  });
+  dimHTML+='</tbody></table></div>';
+
+  return '<div class="breakdown-section">'
+    +'<div class="breakdown-title">COLOR/SIZE BREAKDOWN'+(style?' &nbsp;—&nbsp; STYLE N° : '+style+(po?' &nbsp; PO#'+po:''):'')+'</div>'
+    +'<table class="breakdown-table">'+tblHdr+tblBody+'</table>'
+    +summary
+    +dimHTML
+    +'</div>';
+}
+
+function buildBreakdownForSingle(ci,meta){
+  _lastMeta=meta;
+  const res=_allResults[ci];if(!res)return;
+  const{tailles,donnees,statsData,color,nom}=res;
+  const rsCard=document.getElementById('rs-'+ci);if(!rsCard)return;
+  const old=rsCard.querySelector('.breakdown-section');if(old)old.remove();
+  const gt={n:statsData?statsData.n:0,g:statsData?statsData.g:0,c:statsData?statsData.c:0,v:statsData?statsData.v:0};
+  rsCard.insertAdjacentHTML('beforeend',buildBreakdownHTML(tailles,[{nom,color,tailles,donnees,statsData}],meta,gt));
+}
+
+// ========= COMBINED PL =========
+function buildCombinedPL(mode,meta){
+  _lastMeta=meta;
+  let allTailles=[];
+  _allResults.forEach(r=>{r.tailles.forEach(t=>{if(!allTailles.includes(t))allTailles.push(t);});});
+  let legendHtml='<div class="color-legend"><span style="font-family:var(--mono);font-size:11px;color:var(--text2);margin-right:4px;">LÉGENDE:</span>';
+  _allResults.forEach((r,ci)=>{legendHtml+='<span class="legend-item"><span class="legend-dot" style="background:'+r.color+'"></span>'+r.nom+'</span>';});
+  legendHtml+='</div>';
+  let hdr='<tr><th style="text-align:left;padding-left:14px;">PACKING N°</th><th>COLOR/SIZE</th>';
+  allTailles.forEach(t=>hdr+='<th>'+t+'</th>');
+  hdr+='<th>PCS/CTN</th><th>NB CTN</th><th>TOTAL QTY</th><th class="th-net">NET WEIGHT</th><th class="th-gross">GROSS WEIGHT</th><th>CBM m³</th></tr>';
+  let combinedBody='';
+  let grandTot={c:0,p:0,n:0,g:0,v:0};
+  allTailles.forEach(t=>grandTot[t]=0);
+  let globalCartonNum=1;
+  const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+  _allResults.forEach((res,ci)=>{
+    const{nom,tailles,donnees,statsData,color}=res;
+    const rowBg=isDark?COLOR_BG_DARK[ci%COLOR_BG_DARK.length]:COLOR_BG_LIGHT[ci%COLOR_BG_LIGHT.length];
+    const colorStyle='background:'+rowBg+';';
+    const tbody=document.getElementById('rb-'+ci);if(!tbody)return;
+    const rows=tbody.querySelectorAll('.row-data');
+    rows.forEach(row=>{
+      let nbr=parseInt(row.getAttribute('data-nbr'))||0;
+      let solid=['solid','solid_reste'].includes(row.getAttribute('data-type'));
+      let isMixed=row.getAttribute('data-type')==='mixed';
+      let sizeVals={};
+      tailles.forEach((t,i)=>{
+        let q=0;
+        if(solid)q=parseInt(row.cells[i+2].innerText.trim())||0;
+        else{let inp=row.querySelector('[data-taille="'+t+'"]');q=inp?(parseInt(inp.value)||0):0;}
+        sizeVals[t]=q;
+      });
+      let pcs=0,net=0,wv=0,cbm=0;
+      tailles.forEach(t=>{
+        let q=sizeVals[t]||0;
+        if(q>0){if(donnees[t].wCarton>wv)wv=donnees[t].wCarton;if(donnees[t].cbmUnit>cbm)cbm=donnees[t].cbmUnit;}
+        pcs+=q;net+=q*donnees[t].wPiece;
+      });
+      let tp=pcs*nbr,tn=net*nbr,tg=tn+wv*nbr,tv=cbm*nbr;
+      let plage=globalCartonNum+'-'+(globalCartonNum+nbr-1);
+      globalCartonNum+=nbr;
+      let rowClass=isMixed?'mixed-row':'solid-row';
+      combinedBody+='<tr class="row-data '+rowClass+'" style="'+colorStyle+'">'
+        +'<td style="'+colorStyle+'"><b>'+plage+'</b></td>'
+        +'<td class="color-stripe-cell" style="color:'+color+';background:color-mix(in srgb,'+color+' 18%,transparent);">'+nom+'</td>';
+      allTailles.forEach(t=>{let v=sizeVals[t]||'';combinedBody+='<td style="'+colorStyle+'">'+(v?'<b>'+v+'</b>':'')+'</td>';});
+      combinedBody+='<td style="'+colorStyle+'"><b>'+(pcs||'')+'</b></td>'
+        +'<td style="'+colorStyle+'"><b>'+nbr+'</b></td>'
+        +'<td style="'+colorStyle+'"><b>'+(tp||'')+'</b></td>'
+        +'<td style="'+colorStyle+'"><b class="td-net">'+tn.toFixed(2)+'</b></td>'
+        +'<td style="'+colorStyle+'"><b class="td-gross">'+tg.toFixed(2)+'</b></td>'
+        +'<td style="'+colorStyle+'">'+tv.toFixed(4)+'</td>'
+        +'</tr>';
+      grandTot.c+=nbr;grandTot.p+=tp;grandTot.n+=tn;grandTot.g+=tg;grandTot.v+=tv;
+      allTailles.forEach(t=>{grandTot[t]+=(sizeVals[t]||0)*nbr;});
+    });
+  });
+  combinedBody+='<tr class="total-row"><td>GRAND TOTAL</td><td>ALL</td>';
+  allTailles.forEach(t=>combinedBody+='<td>'+grandTot[t]+'</td>');
+  combinedBody+='<td>—</td><td>'+grandTot.c+'</td><td>'+grandTot.p+'</td>'
+    +'<td><b class="td-net">'+grandTot.n.toFixed(2)+'</b></td><td><b class="td-gross">'+grandTot.g.toFixed(2)+'</b></td><td>'+grandTot.v.toFixed(4)+'</td></tr>';
+
+  const rs=document.getElementById('result-section');
+  const old=document.getElementById('combined-pl-section');if(old)old.remove();
+
+  const breakdownHtml=buildBreakdownHTML(allTailles,_allResults,meta,grandTot);
+
+  let combinedHtml='<div class="card combined-pl-wrapper" id="combined-pl-section">'
+    +'<div class="combined-pl-title">📁 COMBINED PACKING LIST — TOUTES LES COULEURS ('+_allResults.length+')</div>'
+    +'<div class="order-meta">'
+    +'<span>📋 <b>'+(document.getElementById('info-order').value||'—')+'</b></span>'
+    +'<span>👤 <b>'+(document.getElementById('info-customer').value||'—')+'</b></span>'
+    +'<span>🏷️ PO: <b>'+(document.getElementById('info-po').value||'—')+'</b></span>'
+    +(meta.destination?'<span>✈️ <b>'+meta.destination+'</b></span>':'')
+    +'<span>📦 TOTAL: <b>'+grandTot.p.toLocaleString('fr-FR')+' PCS</b></span>'
+    +'<span>Cartons: <b>'+grandTot.c+'</b></span>'
+    +'</div>'
+    +legendHtml
+    +'<div class="table-wrap"><table class="result-table"><thead>'+hdr+'</thead><tbody>'+combinedBody+'</tbody></table></div>'
+    +breakdownHtml
+    +'</div>';
+  rs.insertAdjacentHTML('beforeend',combinedHtml);
+}
+
+function rebuildCombinedPL(){
+  const old=document.getElementById('combined-pl-section');if(old)old.remove();
+  if(_allResults.length>1){
+    const mode=document.querySelector('input[name="modeEmballage"]:checked').value;
+    buildCombinedPL(mode,_lastMeta||{});
+  }
+}
+
+// ========= COLLECT ROWS =========
+function collectRows(ci,tailles,donnees){
+  const rows=document.querySelectorAll('#rb-'+ci+' .row-data');
+  return Array.from(rows).map(row=>{
+    let nbr=parseInt(row.getAttribute('data-nbr'))||0;
+    let solid=['solid','solid_reste'].includes(row.getAttribute('data-type'));
+    let sizes={},pcs=0,net=0,wv=0,cbm=0;
+    tailles.forEach((t,i)=>{
+      let q=0;
+      if(solid)q=parseInt(row.cells[i+2].innerText.trim())||0;
+      else{let inp=row.querySelector('[data-taille="'+t+'"]');q=inp?(parseInt(inp.value)||0):0;}
+      sizes[t]=q;pcs+=q;net+=q*donnees[t].wPiece;
+      if(q>0){if(donnees[t].wCarton>wv)wv=donnees[t].wCarton;if(donnees[t].cbmUnit>cbm)cbm=donnees[t].cbmUnit;}
+    });
+    let tp=pcs*nbr,tn=net*nbr,tg=tn+wv*nbr,tv=cbm*nbr;
+    return{carton:row.cells[0].innerText.trim(),nbr,sizes,pcs,tp,net:tn,gross:tg,cbm:tv};
+  });
+}
+
+// ========= EXPORT EXCEL =========
+function exporterExcel(){
+  if(!_allResults.length){alert("Générez d'abord la Packing List.");return;}
+  const wb=XLSX.utils.book_new();
+  const order=document.getElementById('info-order').value.trim();
+  const customer=document.getElementById('info-customer').value.trim();
+  const po=document.getElementById('info-po').value.trim();
+  const style=document.getElementById('info-style').value.trim();
+  const invoice=document.getElementById('info-invoice').value.trim();
+  const destination=document.getElementById('info-destination').value.trim();
+  const address=document.getElementById('info-address').value.trim();
+  const portDepart=document.getElementById('info-port-depart').value.trim();
+  const portArrivee=document.getElementById('info-port-arrivee').value.trim();
+  const pays=document.getElementById('info-pays').value.trim();
+
+  const BORDER_THIN={style:'thin',color:{rgb:'AAAAAA'}};
+  const BORDER_MED={style:'medium',color:{rgb:'555555'}};
+  const ALL_BORDERS={top:BORDER_THIN,bottom:BORDER_THIN,left:BORDER_THIN,right:BORDER_THIN};
+
+  function sty(ws,r,c,s){const a=XLSX.utils.encode_cell({r,c});if(!ws[a])ws[a]={t:'s',v:''};ws[a].s=s;}
+
+  _allResults.forEach((res,ci)=>{
+    const{nom,tailles,donnees,statsData}=res;
+    const rows=collectRows(ci,tailles,donnees);
+    let wsData=[];let rowIdx=0;
+
+    wsData.push(['PL '+customer+' '+order,...Array(tailles.length+8).fill('')]);rowIdx++;
+    wsData.push(['INVOICE N° : '+(invoice||''),...Array(tailles.length+8).fill('')]);rowIdx++;
+    wsData.push(['Mers :',...Array(tailles.length+8).fill('')]);rowIdx++;
+    wsData.push([customer,...Array(tailles.length+8).fill('')]);rowIdx++;
+    if(address)wsData.push([address,...Array(tailles.length+8).fill('')]),rowIdx++;
+    if(destination)wsData.push([destination,...Array(tailles.length+8).fill('')]),rowIdx++;
+    if(pays)wsData.push([pays,...Array(tailles.length+8).fill('')]),rowIdx++;
+    if(portDepart||portArrivee)wsData.push(['PORT: '+portDepart+' → '+portArrivee,...Array(tailles.length+8).fill('')]),rowIdx++;
+    wsData.push([]);rowIdx++;
+    const infoEndRow=rowIdx;
+
+    if(statsData){
+      wsData.push(['N° OF QTY :',statsData.p||0,'','N.W (kg) :',+(statsData.n||0).toFixed(2),'','GW (kg) :',+(statsData.g||0).toFixed(2)]);rowIdx++;
+      wsData.push(['N° OF CNTS :',statsData.c||0,'','CBM (m3) :',+(statsData.v||0).toFixed(4)]);rowIdx++;
+      wsData.push([]);rowIdx++;
+    }
+
+    const hdrRow=['PACKING N°','COLOR/SIZE',...tailles,'Quantity/Car','N° of Carton','TOTAL QUANTITY','NET WEIGHT','GROSS WEIGHT','CBM m³'];
+    wsData.push(hdrRow);const hdrIdx=rowIdx;rowIdx++;
+    wsData.push(['STYLE N° : '+style+' — PO#'+po,...Array(tailles.length+8).fill('')]);
+    const styleRowIdx=rowIdx;rowIdx++;
+
+    rows.forEach(r=>{
+      let row=[r.carton,nom];
+      tailles.forEach(t=>row.push(r.sizes[t]||''));
+      row.push(r.pcs||'',r.nbr,r.tp||'',+r.net.toFixed(2),+r.gross.toFixed(2),+r.cbm.toFixed(4));
+      wsData.push(row);rowIdx++;
+    });
+
+    let totRow=['TOTAL =',nom];
+    tailles.forEach(t=>totRow.push(statsData?((statsData[t])||0):0));
+    totRow.push('',statsData?(statsData.c||0):0,statsData?(statsData.p||0):0,
+      statsData?+(statsData.n||0).toFixed(2):0,statsData?+(statsData.g||0).toFixed(2):0,
+      statsData?+(statsData.v||0).toFixed(4):0);
+    wsData.push(totRow);const totIdx=rowIdx;rowIdx++;
+    wsData.push([]);rowIdx++;
+
+    const bkTitleRow=rowIdx;
+    wsData.push(['COLOR/SIZE BREAKDOWN',...Array(tailles.length+8).fill('')]);rowIdx++;
+    wsData.push(['STYLE N° : '+style+' — PO#'+po,'','','COLOR/SIZ',...tailles,'TTL']);rowIdx++;
+    _allResults.forEach(r=>{
+      if(!r.statsData)return;
+      let row=['','','',r.nom];
+      tailles.forEach(t=>row.push(r.statsData[t]||0));
+      row.push(r.statsData.p||0);wsData.push(row);rowIdx++;
+    });
+    let ttlBkRow=['','','','TTL'];
+    let colTotals={};tailles.forEach(t=>colTotals[t]=0);let grandPcsBk=0;
+    _allResults.forEach(r=>{if(!r.statsData)return;tailles.forEach(t=>{colTotals[t]+=(r.statsData[t]||0);});grandPcsBk+=r.statsData.p||0;});
+    tailles.forEach(t=>ttlBkRow.push(colTotals[t]));ttlBkRow.push(grandPcsBk);
+    wsData.push(ttlBkRow);rowIdx++;
+    wsData.push([]);rowIdx++;
+    wsData.push(['','Nº OF QTY',':',statsData?statsData.p:0]);rowIdx++;
+    wsData.push(['','Nº OF CNTS',':',statsData?statsData.c:0]);rowIdx++;
+    wsData.push(['','N.W (kg)',':',statsData?+(statsData.n||0).toFixed(2):0]);rowIdx++;
+    wsData.push(['','GW (kg)',':',statsData?+(statsData.g||0).toFixed(2):0]);rowIdx++;
+    const t0=tailles[0];
+    if(t0&&donnees[t0]){const d=donnees[t0];const L=d.dimL||0;const l=d.diml||0;const h=d.dimH||0;
+      if(L&&l&&h){wsData.push(['','Carton Size (CM)','',L+' X '+l+' X '+h+' CM']);rowIdx++;}}
+    let cbmTot=0;_allResults.forEach(r=>{if(r.statsData)cbmTot+=r.statsData.v||0;});
+    wsData.push(['','CBM (m3)',':',+cbmTot.toFixed(3)]);rowIdx++;
+    wsData.push([]);rowIdx++;
+
+    // DIMENSION TABLE dans Excel (pas masquée ici, contrairement à l'impression)
+    wsData.push(['STYLE/COLOR WEIGHT & DIMENSION',...Array(5).fill('')]);rowIdx++;
+    wsData.push(['SIZE','LENGTH','WIDTH','HEIGHT','WEIGHT (oz)']);rowIdx++;
+    tailles.forEach(t=>{
+      const d=donnees[t];if(!d)return;
+      const wOz=d.wPiece?(d.wPiece*35.274).toFixed(2):'-';
+      wsData.push([t,(d.dimL||'-')+' cm',(d.diml||'-')+' cm',(d.dimH||'-')+' cm',wOz+' oz']);rowIdx++;
+    });
+
+    const ws=XLSX.utils.aoa_to_sheet(wsData);
+    const ncols=tailles.length+9;
+    ws['!merges']=[
+      {s:{r:0,c:0},e:{r:0,c:ncols-1}},
+      {s:{r:1,c:0},e:{r:1,c:ncols-1}},
+      {s:{r:2,c:0},e:{r:2,c:ncols-1}},
+      {s:{r:3,c:0},e:{r:3,c:ncols-1}},
+      {s:{r:bkTitleRow,c:0},e:{r:bkTitleRow,c:ncols-1}},
+    ];
+    ws['!cols']=[{wch:16},{wch:20},...tailles.map(()=>({wch:9})),{wch:12},{wch:11},{wch:14},{wch:12},{wch:14},{wch:11}];
+    sty(ws,0,0,{font:{bold:true,sz:18,color:{rgb:'C62828'}},fill:{fgColor:{rgb:'FDECEA'}},alignment:{horizontal:'center',vertical:'center'},border:ALL_BORDERS});
+    for(let r=1;r<infoEndRow;r++){sty(ws,r,0,{font:{sz:10,color:{rgb:'C62828'}},fill:{fgColor:{rgb:'FDECEA'}},border:ALL_BORDERS});}
+    for(let c=0;c<ncols;c++){
+      let s={font:{bold:true,sz:10,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'2C3E50'}},border:{top:BORDER_MED,bottom:BORDER_MED,left:BORDER_THIN,right:BORDER_THIN},alignment:{horizontal:'center',vertical:'center'}};
+      if(c===ncols-3)s.fill={fgColor:{rgb:'00ACC1'}};
+      if(c===ncols-2)s.fill={fgColor:{rgb:'C62828'}};
+      sty(ws,hdrIdx,c,s);
+    }
+    sty(ws,styleRowIdx,0,{font:{bold:true,sz:10},fill:{fgColor:{rgb:'F5F5F5'}},border:ALL_BORDERS});
+    for(let r=styleRowIdx+1;r<totIdx;r++){
+      const even=(r-styleRowIdx)%2===0;
+      for(let c=0;c<ncols;c++){
+        let s={fill:{fgColor:{rgb:even?'EBF5FB':'FFFFFF'}},font:{sz:10,bold:c===0},alignment:{horizontal:'center',vertical:'center'},border:ALL_BORDERS};
+        if(c===ncols-3)s.font={...s.font,color:{rgb:'00695C'}};
+        if(c===ncols-2)s.font={...s.font,color:{rgb:'C62828'}};
+        sty(ws,r,c,s);
+      }
+    }
+    for(let c=0;c<ncols;c++){sty(ws,totIdx,c,{font:{bold:true,sz:11,color:{rgb:'7B6000'}},fill:{fgColor:{rgb:'FFF9C4'}},border:{top:BORDER_MED,bottom:BORDER_MED,left:BORDER_THIN,right:BORDER_THIN},alignment:{horizontal:'center',vertical:'center'}});}
+    for(let c=0;c<ncols;c++){sty(ws,bkTitleRow,c,{font:{bold:true,sz:12,color:{rgb:'1A1A1A'}},fill:{fgColor:{rgb:'F6E05E'}},alignment:{horizontal:'left'},border:ALL_BORDERS});}
+    ws['!rows']=[{hpt:36},...Array(rowIdx-1).fill({hpt:18})];
+    ws['!rows'][hdrIdx]={hpt:24};ws['!rows'][totIdx]={hpt:24};ws['!rows'][bkTitleRow]={hpt:22};
+    XLSX.utils.book_append_sheet(wb,ws,nom.substring(0,31));
+  });
+
+  if(_allResults.length>1){
+    let allTailles=[];
+    _allResults.forEach(r=>{r.tailles.forEach(t=>{if(!allTailles.includes(t))allTailles.push(t);});});
+    let wsData=[];let rowIdx=0;
+    wsData.push(['PL '+customer+' '+order+' — COMBINED',...Array(allTailles.length+8).fill('')]);rowIdx++;
+    wsData.push(['INVOICE N° : '+(invoice||''),...Array(allTailles.length+8).fill('')]);rowIdx++;
+    wsData.push([customer+(address?' — '+address:'')+(pays?' — '+pays:''),...Array(allTailles.length+8).fill('')]);rowIdx++;
+    if(destination)wsData.push(['DESTINATION: '+destination,...Array(allTailles.length+8).fill('')]),rowIdx++;
+    if(portDepart||portArrivee)wsData.push(['PORT: '+portDepart+' → '+portArrivee,...Array(allTailles.length+8).fill('')]),rowIdx++;
+    wsData.push([]);rowIdx++;
+    const hdrRow=['PACKING N°','COLOR/SIZE',...allTailles,'Quantity/Car','N° of Carton','TOTAL QUANTITY','NET WEIGHT','GROSS WEIGHT','CBM m³'];
+    wsData.push(hdrRow);const hdrIdx=rowIdx;rowIdx++;
+    let grandTot={c:0,p:0,n:0,g:0,v:0};allTailles.forEach(t=>grandTot[t]=0);
+    let globalNum=1;
+    _allResults.forEach((res,ci)=>{
+      const{nom,tailles,donnees,statsData}=res;
+      const rows=collectRows(ci,tailles,donnees);
+      rows.forEach(r=>{
+        let row=[globalNum+'-'+(globalNum+r.nbr-1),nom];
+        allTailles.forEach(t=>row.push(r.sizes[t]||''));
+        row.push(r.pcs||'',r.nbr,r.tp||'',+r.net.toFixed(2),+r.gross.toFixed(2),+r.cbm.toFixed(4));
+        wsData.push(row);rowIdx++;
+        grandTot.c+=r.nbr;grandTot.p+=r.tp;grandTot.n+=r.net;grandTot.g+=r.gross;grandTot.v+=r.cbm;
+        allTailles.forEach(t=>{grandTot[t]+=(r.sizes[t]||0)*r.nbr;});
+        globalNum+=r.nbr;
+      });
+    });
+    let totRow=['GRAND TOTAL','ALL COLORS'];
+    allTailles.forEach(t=>totRow.push(grandTot[t]||0));
+    totRow.push('',grandTot.c,grandTot.p,+grandTot.n.toFixed(2),+grandTot.g.toFixed(2),+grandTot.v.toFixed(4));
+    wsData.push(totRow);const totIdx=rowIdx;rowIdx++;
+    wsData.push([]);rowIdx++;
+    const bkTitleRow=rowIdx;
+    wsData.push(['COLOR/SIZE BREAKDOWN',...Array(allTailles.length+8).fill('')]);rowIdx++;
+    wsData.push(['','','','COLOR/SIZ',...allTailles,'TTL']);rowIdx++;
+    _allResults.forEach(r=>{
+      if(!r.statsData)return;
+      let row=['','','',r.nom];
+      allTailles.forEach(t=>row.push(r.statsData[t]||0));row.push(r.statsData.p||0);
+      wsData.push(row);rowIdx++;
+    });
+    let ttlBkRow=['','','','TTL'];
+    let colTotals={};allTailles.forEach(t=>colTotals[t]=0);let grandPcsBk=0;
+    _allResults.forEach(r=>{if(!r.statsData)return;allTailles.forEach(t=>{colTotals[t]+=(r.statsData[t]||0);});grandPcsBk+=r.statsData.p||0;});
+    allTailles.forEach(t=>ttlBkRow.push(colTotals[t]));ttlBkRow.push(grandPcsBk);
+    wsData.push(ttlBkRow);rowIdx++;
+    wsData.push(['','Nº OF QTY',':',grandTot.p]);rowIdx++;
+    wsData.push(['','Nº OF CNTS',':',grandTot.c]);rowIdx++;
+    wsData.push(['','N.W (kg)',':',+grandTot.n.toFixed(2)]);rowIdx++;
+    wsData.push(['','GW (kg)',':',+grandTot.g.toFixed(2)]);rowIdx++;
+    wsData.push(['','CBM (m3)',':',+grandTot.v.toFixed(3)]);rowIdx++;
+
+    const ws=XLSX.utils.aoa_to_sheet(wsData);
+    const ncols=allTailles.length+9;
+    const BORDER_THIN2={style:'thin',color:{rgb:'AAAAAA'}};
+    const BORDER_MED2={style:'medium',color:{rgb:'555555'}};
+    const ALL_BORDERS2={top:BORDER_THIN2,bottom:BORDER_THIN2,left:BORDER_THIN2,right:BORDER_THIN2};
+    function sty2(ws,r,c,s){const a=XLSX.utils.encode_cell({r,c});if(!ws[a])ws[a]={t:'s',v:''};ws[a].s=s;}
+    ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:ncols-1}},{s:{r:1,c:0},e:{r:1,c:ncols-1}},{s:{r:2,c:0},e:{r:2,c:ncols-1}},{s:{r:bkTitleRow,c:0},e:{r:bkTitleRow,c:ncols-1}}];
+    ws['!cols']=[{wch:16},{wch:16},...allTailles.map(()=>({wch:9})),{wch:12},{wch:11},{wch:14},{wch:12},{wch:14},{wch:11}];
+    sty2(ws,0,0,{font:{bold:true,sz:18,color:{rgb:'C62828'}},fill:{fgColor:{rgb:'FDECEA'}},alignment:{horizontal:'center',vertical:'center'},border:ALL_BORDERS2});
+    for(let r=1;r<5;r++)sty2(ws,r,0,{font:{sz:10,color:{rgb:'C62828'}},fill:{fgColor:{rgb:'FDECEA'}},border:ALL_BORDERS2});
+    for(let c=0;c<ncols;c++){
+      let s={font:{bold:true,sz:11,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'1A3355'}},border:{top:BORDER_MED2,bottom:BORDER_MED2,left:BORDER_THIN2,right:BORDER_THIN2},alignment:{horizontal:'center',vertical:'center'}};
+      if(c===ncols-3)s.fill={fgColor:{rgb:'00ACC1'}};
+      if(c===ncols-2)s.fill={fgColor:{rgb:'C62828'}};
+      sty2(ws,hdrIdx,c,s);
+    }
+    let rr=hdrIdx+1;
+    _allResults.forEach((res,ci)=>{
+      const rows=collectRows(ci,res.tailles,res.donnees);
+      const bg=ci%2===0?'EBF5FB':'FFFFFF';
+      rows.forEach(()=>{
+        for(let c=0;c<ncols;c++){
+          let s={fill:{fgColor:{rgb:bg}},font:{sz:10,bold:c===0},alignment:{horizontal:'center',vertical:'center'},border:ALL_BORDERS2};
+          if(c===ncols-3)s.font={...s.font,color:{rgb:'00695C'}};
+          if(c===ncols-2)s.font={...s.font,color:{rgb:'C62828'}};
+          sty2(ws,rr,c,s);
+        }rr++;
+      });
+    });
+    for(let c=0;c<ncols;c++){sty2(ws,totIdx,c,{font:{bold:true,sz:12,color:{rgb:'7B6000'}},fill:{fgColor:{rgb:'FFF9C4'}},border:{top:BORDER_MED2,bottom:BORDER_MED2,left:BORDER_THIN2,right:BORDER_THIN2},alignment:{horizontal:'center',vertical:'center'}});}
+    for(let c=0;c<ncols;c++){sty2(ws,bkTitleRow,c,{font:{bold:true,sz:12,color:{rgb:'1A1A1A'}},fill:{fgColor:{rgb:'F6E05E'}},alignment:{horizontal:'left'},border:ALL_BORDERS2});}
+    ws['!rows']=[{hpt:36},...Array(rowIdx-1).fill({hpt:18})];
+    ws['!rows'][hdrIdx]={hpt:26};ws['!rows'][totIdx]={hpt:26};ws['!rows'][bkTitleRow]={hpt:22};
+    XLSX.utils.book_append_sheet(wb,ws,'COMBINED');
+  }
+
+  let fn=document.getElementById('info-filename').value.trim()||'PACKING_LIST';
+  if(!fn.endsWith('.xlsx'))fn+='.xlsx';
+  XLSX.writeFile(wb,fn);
+}
+
+// ========= REFRESH SELECTS =========
+function refreshAllPanelDimSelects(){
+  couleurs.forEach((_,ci)=>{
+    const sel=document.getElementById('dim-model-sel-'+ci);if(!sel)return;
+    const curVal=sel.value;
+    sel.innerHTML='<option value="">-- Manuel --</option>'
+      +_dimModels.map(m=>'<option value="'+m.name+'">'+m.name+' ('+m.L+'×'+m.l+'×'+m.h+'cm)</option>').join('');
+    if(curVal&&_dimModels.find(m=>m.name===curVal))sel.value=curVal;
+  });
+}
+
+function refreshAllPanelWeightSelects(){
+  couleurs.forEach((_,ci)=>{
+    const sel=document.getElementById('weight-model-sel-'+ci);if(!sel)return;
+    const curVal=sel.value;
+    sel.innerHTML='<option value="">-- Manuel --</option>'
+      +_weightModels.map(m=>'<option value="'+m.name+'">'+m.name+' (P:'+m.wPiece+'kg / C:'+m.wCarton+'kg)</option>').join('');
+    if(curVal&&_weightModels.find(m=>m.name===curVal))sel.value=curVal;
+  });
+}
+
+// ========= SQL EXPORT =========
+function exporterSQL(){
+  const order=document.getElementById('info-order').value.trim();
+  const customer=document.getElementById('info-customer').value.trim();
+  const po=document.getElementById('info-po').value.trim();
+  const style=document.getElementById('info-style').value.trim();
+  const invoice=document.getElementById('info-invoice').value.trim();
+  const destination=document.getElementById('info-destination').value.trim();
+  const address=document.getElementById('info-address').value.trim();
+  const portDepart=document.getElementById('info-port-depart').value.trim();
+  const portArrivee=document.getElementById('info-port-arrivee').value.trim();
+  const pays=document.getElementById('info-pays').value.trim();
+  const globalMode=document.querySelector('input[name="modeEmballage"]:checked').value;
+  const ts=new Date().toISOString();
+
+  let sql='-- PACKING LIST PRO v8 — DATABASE EXPORT\n';
+  sql+='-- Généré le: '+ts+'\n';
+  sql+='-- Order: '+order+' | Customer: '+customer+'\n\n';
+
+  sql+=`CREATE TABLE IF NOT EXISTS packing_config (key TEXT PRIMARY KEY, value TEXT NOT NULL);\n\n`;
+  sql+=`CREATE TABLE IF NOT EXISTS dim_models (name TEXT PRIMARY KEY, L REAL NOT NULL, l REAL NOT NULL, h REAL NOT NULL);\n\n`;
+  sql+=`CREATE TABLE IF NOT EXISTS weight_models (name TEXT PRIMARY KEY, w_piece REAL NOT NULL, w_carton REAL NOT NULL);\n\n`;
+  sql+=`CREATE TABLE IF NOT EXISTS colors (id INTEGER PRIMARY KEY, nom TEXT NOT NULL, mode TEXT NOT NULL DEFAULT 'inherit');\n\n`;
+  sql+=`CREATE TABLE IF NOT EXISTS sizes (color_id INTEGER NOT NULL, size_index INTEGER NOT NULL, name TEXT, qty INTEGER DEFAULT 0, cap INTEGER DEFAULT 25, w_piece REAL DEFAULT 0.250, w_carton REAL DEFAULT 0.80, dim_L REAL DEFAULT 61, dim_l REAL DEFAULT 41, dim_h REAL DEFAULT 30, PRIMARY KEY (color_id, size_index));\n\n`;
+  sql+=`CREATE TABLE IF NOT EXISTS packing_snapshot (id INTEGER PRIMARY KEY DEFAULT 1, result_html TEXT, all_results_json TEXT, generated_at TEXT);\n\n`;
+
+  sql+='-- CONFIGURATION\n';
+  sql+='DELETE FROM packing_config;\n';
+  const configs=[
+    ['order',order],['customer',customer],['po',po],['style',style],
+    ['invoice',invoice],['destination',destination],['address',address],
+    ['port_depart',portDepart],['port_arrivee',portArrivee],['pays',pays],
+    ['global_mode',globalMode],['max_sizes',String(_maxSizes)],
+    ['filename',document.getElementById('info-filename').value.trim()],
+    ['force_single_ctn',_forceSingleCtn?'1':'0']
+  ];
+  configs.forEach(([k,v])=>{sql+=`INSERT INTO packing_config (key, value) VALUES ('${esc(k)}', '${esc(v)}');\n`;});
+  sql+='\n';
+
+  sql+='-- MODÈLES DIMENSIONS\n';
+  sql+='DELETE FROM dim_models;\n';
+  _dimModels.forEach(m=>{sql+=`INSERT INTO dim_models (name, L, l, h) VALUES ('${esc(m.name)}', ${m.L}, ${m.l}, ${m.h});\n`;});
+  sql+='\n';
+
+  sql+='-- MODÈLES POIDS\n';
+  sql+='DELETE FROM weight_models;\n';
+  _weightModels.forEach(m=>{sql+=`INSERT INTO weight_models (name, w_piece, w_carton) VALUES ('${esc(m.name)}', ${m.wPiece}, ${m.wCarton});\n`;});
+  sql+='\n';
+
+  sql+='-- COULEURS ET TAILLES\n';
+  sql+='DELETE FROM sizes;\nDELETE FROM colors;\n';
+  couleurs.forEach((coul,ci)=>{
+    sql+=`INSERT INTO colors (id, nom, mode) VALUES (${ci}, '${esc(coul.nom)}', '${esc(coul.mode)}');\n`;
+    const p=document.getElementById('panel-'+ci);if(!p)return;
+    const names=p.querySelectorAll('.size-name');const qtys=p.querySelectorAll('.size-qty');
+    const caps=p.querySelectorAll('.size-cap');const wps=p.querySelectorAll('.size-w-piece');
+    const wcs=p.querySelectorAll('.size-w-carton');const Ls=p.querySelectorAll('.dim-L');
+    const ls2=p.querySelectorAll('.dim-l');const hs=p.querySelectorAll('.dim-h');
+    for(let si=0;si<names.length;si++){
+      sql+=`INSERT INTO sizes (color_id, size_index, name, qty, cap, w_piece, w_carton, dim_L, dim_l, dim_h) VALUES (`
+        +`${ci}, ${si}, '${esc(names[si].value)}', `
+        +`${parseInt(qtys[si]?qtys[si].value:0)||0}, `
+        +`${parseInt(caps[si]?caps[si].value:25)||25}, `
+        +`${parseFloat(wps[si]?wps[si].value:0.250)||0.250}, `
+        +`${parseFloat(wcs[si]?wcs[si].value:0.80)||0.80}, `
+        +`${parseFloat(Ls[si]?Ls[si].value:61)||61}, `
+        +`${parseFloat(ls2[si]?ls2[si].value:41)||41}, `
+        +`${parseFloat(hs[si]?hs[si].value:30)||30}`
+        +`);\n`;
+    }
+  });
+  sql+='\n';
+
+  const rsEl=document.getElementById('result-section');
+  const hasResult=rsEl&&rsEl.style.display!=='none'&&rsEl.innerHTML.trim()!=='';
+  sql+='\n-- PACKING LIST SNAPSHOT\nDELETE FROM packing_snapshot;\n';
+  if(hasResult){
+    const allResSerial=_allResults.map(r=>({nom:r.nom,color:r.color,mode:r.mode,tailles:r.tailles,donnees:r.donnees,statsData:r.statsData}));
+    const resultHTML=rsEl.innerHTML;
+    const htmlEsc=resultHTML.replace(/'/g,"''");
+    const jsonEsc=JSON.stringify(allResSerial).replace(/'/g,"''");
+    sql+=`INSERT INTO packing_snapshot (id, result_html, all_results_json, generated_at) VALUES (1, '${htmlEsc}', '${jsonEsc}', '${ts}');\n`;
+  }
+  sql+='\n-- END OF FILE\n';
+
+  const blob=new Blob([sql],{type:'text/plain'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const fn=(document.getElementById('info-filename').value.trim()||'PACKING_LIST').replace(/\.xlsx$/i,'');
+  a.href=url;a.download=fn+'_DB.sql';a.click();URL.revokeObjectURL(url);
+
+  const btn=document.querySelector('[onclick="exporterSQL()"]');
+  if(btn){const orig=btn.innerHTML;btn.innerHTML=hasResult?'✅ SQL + PL sauvegardés!':'✅ SQL sauvegardé!';setTimeout(()=>btn.innerHTML=orig,2000);}
+}
+
+function esc(s){return String(s||'').replace(/'/g,"''");}
+
+// ========= SQL IMPORT =========
+function handleSQLDrop(e){const file=e.dataTransfer.files[0];if(file)parseSQLFile(file);}
+function importSQLFile(input){const file=input.files[0];if(file)parseSQLFile(file);input.value='';}
+function parseSQLFile(file){
+  const status=document.getElementById('sql-import-status');
+  status.textContent='⏳ Lecture du fichier...';
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const sql=e.target.result;status.textContent='⏳ Analyse SQL en cours...';
+      setTimeout(()=>{
+        try{restoreFromSQL(sql);status.innerHTML='✅ <b>Données restaurées avec succès !</b>';
+          setTimeout(()=>{document.getElementById('sql-import-overlay').style.display='none';status.textContent='';},1500);
+        }catch(err){status.innerHTML='❌ Erreur: '+err.message;console.error(err);}
+      },100);
+    }catch(err){status.innerHTML='❌ Impossible de lire le fichier.';}
+  };reader.readAsText(file);
+}
+
+function parseSQLValues(sql,table){
+  const rows=[];const upper=sql.toUpperCase();const marker=`INSERT INTO ${table.toUpperCase()}`;
+  let pos=0;
+  while(true){
+    const idx=upper.indexOf(marker,pos);if(idx===-1)break;
+    const valStart=sql.indexOf('(',sql.indexOf('VALUES',idx+marker.length))+1;
+    if(valStart<=0){pos=idx+marker.length;continue;}
+    let depth=1,i=valStart,inStr=false;
+    while(i<sql.length&&depth>0){
+      const c=sql[i];
+      if(c==="'"&&!inStr){inStr=true;}
+      else if(c==="'"&&inStr){if(sql[i+1]==="'"){i++;}else inStr=false;}
+      else if(!inStr){if(c==='(')depth++;else if(c===')')depth--;}
+      if(depth>0)i++;
+    }
+    const valContent=sql.substring(valStart,i);rows.push(parseSQLValueList(valContent));pos=i+1;
+  }return rows;
+}
+
+function parseSQLValueList(str){
+  const vals=[];let cur='',inStr=false,i=0;
+  while(i<str.length){
+    const c=str[i];
+    if(c==="'"&&!inStr){inStr=true;i++;continue;}
+    if(c==="'"&&inStr){if(str[i+1]==="'"){cur+="'";i+=2;continue;}inStr=false;vals.push(cur);cur='';i++;while(i<str.length&&(str[i]===','||str[i]===' '))i++;continue;}
+    if(!inStr&&c===','){vals.push(cur.trim());cur='';i++;while(i<str.length&&str[i]===' ')i++;continue;}
+    cur+=c;i++;
+  }
+  if(cur.trim()!=='')vals.push(cur.trim());
+  return vals.map(v=>{if(v==='NULL')return null;const n=Number(v);return isNaN(n)?v:n;});
+}
+
+function restoreFromSQL(sql){
+  const cfgRows=parseSQLValues(sql,'packing_config');const cfg={};
+  cfgRows.forEach(r=>{if(r.length>=2)cfg[String(r[0])]=String(r[1]);});
+
+  ['order','customer','po','style','invoice','destination','address','port_depart','port_arrivee','pays'].forEach(k=>{
+    const id='info-'+k.replace('_','-');const el=document.getElementById(id);
+    if(el&&cfg[k]!==undefined)el.value=cfg[k];
+  });
+  if(cfg.filename)document.getElementById('info-filename').value=cfg.filename;
+  if(cfg.global_mode)selectMode(cfg.global_mode);
+  if(cfg.max_sizes){
+    const v=parseInt(cfg.max_sizes)||3;_maxSizes=v;
+    document.querySelectorAll('.max-size-btn').forEach(b=>b.classList.toggle('active',parseInt(b.getAttribute('data-val'))===v));
+  }
+  if(cfg.force_single_ctn!==undefined){
+    _forceSingleCtn=cfg.force_single_ctn==='1';
+    const el=document.getElementById('toggle-force-ctn');const badge=document.getElementById('tfc-badge');
+    if(el)el.classList.toggle('on',_forceSingleCtn);if(badge)badge.textContent=_forceSingleCtn?'ACTIVÉ':'DÉSACTIVÉ';
+  }
+
+  const dmRows=parseSQLValues(sql,'dim_models');
+  if(dmRows.length>0){_dimModels=dmRows.map(r=>({name:String(r[0]),L:Number(r[1]),l:Number(r[2]),h:Number(r[3])}));renderDimModels();}
+
+  const wmRows=parseSQLValues(sql,'weight_models');
+  if(wmRows.length>0){_weightModels=wmRows.map(r=>({name:String(r[0]),wPiece:Number(r[1]),wCarton:Number(r[2])}));renderWeightModels();}
+
+  const colorRows=parseSQLValues(sql,'colors');if(colorRows.length===0)throw new Error('Aucune couleur trouvée.');
+  const sizeRows=parseSQLValues(sql,'sizes');
+  const sizesByColor={};
+  sizeRows.forEach(r=>{const ci=Number(r[0]),si=Number(r[1]);if(!sizesByColor[ci])sizesByColor[ci]=[];sizesByColor[ci][si]={name:String(r[2]),qty:Number(r[3]),cap:Number(r[4]),wPiece:Number(r[5]),wCarton:Number(r[6]),dimL:Number(r[7]),diml:Number(r[8]),dimH:Number(r[9])};});
+
+  document.getElementById('color-panels').innerHTML='';couleurs=[];activeCIdx=0;_allResults=[];
+  colorRows.forEach((cr,ci)=>{
+    const nom=String(cr[1]);const mode=String(cr[2]||'inherit');couleurs.push({nom,mode});
+    const sizes=sizesByColor[ci]||[{name:'M',qty:0,cap:25,wPiece:0.250,wCarton:0.80,dimL:61,diml:41,dimH:30}];
+    const srcData={names:sizes.map(s=>s.name),caps:sizes.map(s=>s.cap),wps:sizes.map(s=>s.wPiece),wcs:sizes.map(s=>s.wCarton),Ls:sizes.map(s=>s.dimL),ls:sizes.map(s=>s.diml),hs:sizes.map(s=>s.dimH)};
+    appendPanel(ci,srcData);
+    const p=document.getElementById('panel-'+ci);
+    if(p){const qtys=p.querySelectorAll('.size-qty');sizes.forEach((sz,si2)=>{if(qtys[si2])qtys[si2].value=sz.qty||0;});setColorMode(ci,mode);}
+  });
+  renderTabs();refreshAllPanelDimSelects();refreshAllPanelWeightSelects();setActive(0);calculerQty();updateColorDisplay();updateFilename();
+
+  const snapshotRows=parseSQLValues(sql,'packing_snapshot');
+  const rs=document.getElementById('result-section');rs.innerHTML='';rs.style.display='none';
+  document.getElementById('btnExcel').style.display='none';document.getElementById('btnPDF').style.display='none';
+
+  if(snapshotRows.length>0&&snapshotRows[0][1]){
+    const resultHTML=String(snapshotRows[0][1]);const allResJSON=String(snapshotRows[0][2]||'[]');const generatedAt=String(snapshotRows[0][3]||'');
+    try{const parsed=JSON.parse(allResJSON);_allResults=parsed.map(r=>({...r}));}catch(e){_allResults=[];}
+    rs.innerHTML=resultHTML;
+    const banner=document.createElement('div');
+    banner.style.cssText='display:flex;align-items:center;gap:10px;padding:8px 16px;margin-bottom:8px;background:color-mix(in srgb,var(--accent2) 10%,var(--surface2));border:1px solid color-mix(in srgb,var(--accent2) 35%,transparent);border-radius:8px;font-family:var(--mono);font-size:11px;color:var(--accent2);';
+    banner.innerHTML='✅ <b>Packing List restaurée depuis SQL</b> <span style="color:var(--text3);margin-left:8px;">Générée le : '+generatedAt.replace('T',' ').split('.')[0]+'</span><button onclick="this.parentElement.remove()" style="margin-left:auto;background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;">✕</button>';
+    rs.insertBefore(banner,rs.firstChild);
+    rs.style.display='block';document.getElementById('btnExcel').style.display='flex';document.getElementById('btnPDF').style.display='flex';
+    setTimeout(()=>{
+      _allResults.forEach((res,ci)=>{
+        const{tailles,donnees}=res;
+        document.querySelectorAll('#rb-'+ci+' .editable-cell').forEach(e=>{e.addEventListener('input',()=>recalc(ci,tailles,donnees));});
+        recalc(ci,tailles,donnees);
+      });
+    },50);
+    setTimeout(()=>rs.scrollIntoView({behavior:'smooth',block:'start'}),200);
+  }
+}
+
+// ========= INIT =========
+window.onload=function(){
+  document.getElementById('welcome-input').focus();
+  renderDimModels();renderWeightModels();initCouleurs();calculerQty();updateFilename();
+};
+</script>
+</body>
+</html>

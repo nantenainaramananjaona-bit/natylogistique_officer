@@ -1170,8 +1170,8 @@ function buildResultSection(nom,ci,tailles,donnees,mode,color,meta){
     +'<span>👤 <b>'+meta.customer+'</b></span>'
     +'<span>PO#: <b>'+meta.po+'</b></span>'
     +(meta.invoice?'<span>Invoice: <b>'+meta.invoice+'</b></span>':'')
-    +(meta.destination?'<span>✈️ Dest: <b>'+meta.destination+'</b></span>':'')
-    +(meta.portDepart?'<span>🚢 From: <b>'+meta.portDepart+'</b></span>':'')
+    +(meta.destination?'<span>COMPOSITION: <b>'+meta.destination+'</b></span>':'')
+    +(meta.portDepart?'<span>TAILLE DISPO: <b>'+meta.portDepart+'</b></span>':'')
     +(meta.portArrivee?'<span>🏁 To: <b>'+meta.portArrivee+'</b></span>':'')
     +'<span>📦 <b>'+meta.qty+'</b></span>'
     +'</div>'
